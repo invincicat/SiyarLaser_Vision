@@ -12,7 +12,9 @@ using System.Diagnostics;
 
 namespace SiyarSixsDetect
 {
-    public class classSiyarDetect_R
+   
+ public class classSiyarDetect_R
+
     {
         //调试界面前
         private static int iTimeout = 100;//12.26修改
@@ -3882,7 +3884,7 @@ namespace SiyarSixsDetect
         public static List<object> sySixSideDetect_0603R_Camera12(HObject hoImage, List<PointF[]> lkkPolygon, string strParams, ref string strMessage)
         {
 
-            #region  *** 12相机 六面机左右面 ***
+            #region  *** 12相机 六面机前后面 ***
             if (bUseMutex) muDetect12.WaitOne();
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -3891,17 +3893,24 @@ namespace SiyarSixsDetect
             listObj2Draw.Add(0); listObj2Draw.Add("NG"); listObj2Draw.Add(888);
             try
             {
+                #region 变量声明
                 HObject hoRegion, hoReduced, hoConcate, hoUnion;
-
-
-                HObject ho_ImageClosing;
                 HObject ho_RegionSel;
-                HTuple hv_Rectangularity; HObject ho_ConnectedRegionOpening;
+                HTuple hv_Rectangularity;
                 HTuple hv_Phi, hv_Length1, hv_Length2;
                 HTuple hv_Row, hv_Column, Areakkk, Rowkkk, Colkkk, hv_Num;
+                HTuple hv_Row2, hv_Column2, hv_Area1;
+                HTuple hv_NGCode, hv_parameter;
+                hv_NGCode = 0;
+                HObject ho_Region_Duanmian;
+                HObject ho_Region_Err2;
 
-                HObject ho_RegionClosing, ho_RegionTrans, ho_ConnectedRegionDark2;
-                HObject ho_SelectedRegions;
+                //ceshi01-主要检测部分
+                HTuple NChannel;
+                HObject ho_RectPu;
+                // ***新声明
+                HObject ho_GrayImage;
+                #endregion
 
                 List<string> lsInfo2Draw = new List<string>();
 
@@ -3943,9 +3952,6 @@ namespace SiyarSixsDetect
 
                 #endregion
 
-
-
-
                 #region 调试模式初始化
                 bool is_Debug;
                 if (strMessage == "0")
@@ -3963,43 +3969,125 @@ namespace SiyarSixsDetect
                 #endregion
 
 
-
+                #region  //12相机参数(接收界面传递的参数)
                 string[] strUserParam = strParams.Split('#');
 
-                //12相机参数               
-                int iLength1 = int.Parse(strUserParam[30]);      //iLength1  = 110    半长
-                int iLength1Scale = int.Parse(strUserParam[31]); //iLength1Scale = 10 半长变化值
-                int iLength2 = int.Parse(strUserParam[32]);      //iLength2  = 60     半宽
-                int iLength2Scale = int.Parse(strUserParam[33]); //iLength2Scale = 10 半宽变化值
 
-                int hv_iThr1 = int.Parse(strUserParam[34]);     //iErrThres  = 40    缺陷阈值40
-                int hv_iThr2 = int.Parse(strUserParam[35]);      //iErrArea = 50      缺陷面积50
-                int hv_iMaskWith = int.Parse(strUserParam[36]);   //轮廓矩形度 0.85
-                int hv_iDyn_Thr = int.Parse(strUserParam[37]);    //iEroradis=8 矩形腐蚀半径 8
+                int iLength1 = int.Parse(strUserParam[4]);      //iLength1  = 110    半长
+                int iLength1Scale = int.Parse(strUserParam[5]); //iLength1Scale = 10 半长变化值
+                int iLength2 = int.Parse(strUserParam[6]);      //iLength2  = 60     半宽
+                int iLength2Scale = int.Parse(strUserParam[7]); //iLength2Scale = 10 半宽变化值
 
-                int hv_iScaleMult = int.Parse(strUserParam[38]);     //iErrAll  = 160    全局阈值160
-                int hv_iScaleAdd = int.Parse(strUserParam[39]);     //GrayClosingRect1  = 11   
-                int hv_iErrAll = int.Parse(strUserParam[40]);           //200
-                int hv_iOpening_Circle = int.Parse(strUserParam[41]);   //ClosingCircle1=7
+                int hv_iThr1 = int.Parse(strUserParam[8]);     //iErrThres  = 40    缺陷阈值40
+                int hv_iThr2 = int.Parse(strUserParam[9]);      //iErrArea = 50      缺陷面积50
+                int hv_iMaskWith = int.Parse(strUserParam[10]);   //轮廓矩形度 0.85
+                int hv_iDyn_Thr = int.Parse(strUserParam[11]);    //iEroradis=8 矩形腐蚀半径 8
 
-                int hv_Area_Duanmian = int.Parse(strUserParam[42]);     //
-                int hv_iAngleScale = int.Parse(strUserParam[43]);      //40000
-                float hv_iRecty = float.Parse(strUserParam[44]);      //iErrArea = 50      缺陷面积50
+                int hv_iScaleMult = int.Parse(strUserParam[12]);     //iErrAll  = 160    全局阈值160
+                int hv_iScaleAdd = int.Parse(strUserParam[13]);     //GrayClosingRect1  = 11   
+                int hv_iErrAll = int.Parse(strUserParam[14]);           //200
+                int hv_iOpening_Circle = int.Parse(strUserParam[15]);   //ClosingCircle1=7
 
-                int hv_iErrArea2 = int.Parse(strUserParam[46]);      //矩形腐蚀半径5
-                int iSobelSize = int.Parse(strUserParam[47]);      //缺陷腐蚀半径4     缺陷面积50
-                int iThr1 = int.Parse(strUserParam[48]);
-                float iClosCir = float.Parse(strUserParam[49]);      //长宽比10
+                int hv_Area_Duanmian = int.Parse(strUserParam[16]);     //
+                int hv_iAngleScale = int.Parse(strUserParam[17]);      //40000
+                float hv_iRecty = float.Parse(strUserParam[18]) / 100;      //iErrArea = 50      缺陷面积50
 
-                float iEroCir1 = float.Parse(strUserParam[50]);      //长宽比10
-                float iEroCir2 = float.Parse(strUserParam[51]);      //长宽比10
-                int iThr2 = int.Parse(strUserParam[52]);      //长宽比10
+                int hv_iErrArea2 = int.Parse(strUserParam[20]);      //矩形腐蚀半径5
+                int iSobelSize = int.Parse(strUserParam[21]);      //缺陷腐蚀半径4     缺陷面积50
+                int iThr1 = int.Parse(strUserParam[22]);
+                float iClosCir = float.Parse(strUserParam[23]);      //长宽比10
+
+                float iEroCir1 = float.Parse(strUserParam[24]) / 10;      //长宽比10
+                float iEroCir2 = float.Parse(strUserParam[25]) / 10;      //长宽比10
+                int iThr2 = int.Parse(strUserParam[26]);      //长宽比10
 
 
+                int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
+                int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
+                #endregion
 
-                HTuple hv_Index;
-                HTuple hv_NGCode, hv_parameter;
-                hv_NGCode = 0;
+
+                #region****保存所有图片，不区分正反面
+
+                //图片保存路径
+                string ImageSavePathFive = @"D:\六面机检测程序内部图片保存\一号工位\";
+                string ImageSavePathSix = @"D:\六面机检测程序内部图片保存\二号工位\";
+                string ImageSaveFormat;
+
+                if (iSaveImg == 1 | iSaveImg == 2)
+                {
+                    #region 图片格式判断
+                    switch (iSaveImg)//判断保存图片的格式：1-jpeg，2-bmp
+                    {
+                        case 2:
+                            ImageSaveFormat = "bmp";
+                            break;
+                        default:
+                            ImageSaveFormat = "jpeg";
+                            break;
+
+                    }//判断保存图片的格式
+                    #endregion
+
+                    #region//图片保存，如果文件夹不存在则自动创建文件夹
+                    if (iProductCode == 1) //五号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathFive))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathFive);
+                        }
+
+                        Number555 = Number555 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathFive + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + "." + ImageSaveFormat;
+
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }
+
+                    if (iProductCode == 2) //六号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathSix))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathSix);
+                        }
+
+                        Number666 = Number666 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathSix + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + "." + ImageSaveFormat;
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }
+                    #endregion
+                }
+                #endregion
+
+
+                #region ***判断彩色还是黑白，彩色图像二值化
+                HOperatorSet.CountChannels(hoReduced, out NChannel);
+                if (NChannel == 3) //三通道彩色
+                {
+                    //HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
+                    HOperatorSet.Rgb1ToGray(hoReduced, out ho_GrayImage);
+                }
+                else  //单通道黑白
+                {
+                    HOperatorSet.CopyObj(hoReduced, out ho_GrayImage, 1, 1);  //hoReduced 复制到 ho_ImageReduced
+                }
+
+                #region ---- *** 超时处理  *** ----
+
+                if (sw.ElapsedMilliseconds > iTimeout)
+                {
+                    sw.Stop();
+                    listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
+                    return listObj2Draw;
+                }
+                #endregion
+                #endregion
+
+
+                #region 参数传递
                 hv_parameter = new HTuple();
                 hv_parameter = hv_parameter.TupleConcat(hv_iThr1);
                 hv_parameter = hv_parameter.TupleConcat(hv_iThr2);
@@ -4023,55 +4111,12 @@ namespace SiyarSixsDetect
 
                 hv_parameter = hv_parameter.TupleConcat(iEroCir2);
                 hv_parameter = hv_parameter.TupleConcat(iThr2);
-
-                //ceshi01-主要检测部分
-                HObject ho_RegionDifference, ho_RegionErosion1, ho_ConnectedRegions2, ho_SelectedRegions1,
-                    ho_SelectedRegions3;
-                HTuple hv_Row2, hv_Column2, hv_Area1;
-
-                HObject ho_RegionErrD, ho_ConnectedRegionDark, ho_ImageReduced2, ho_RegionErosion, ho_RectPu, ho_RegionOpening, ho_ImageReduced, ho_RegionBinary, ho_ConnectedRegions, ho_MaxRegion, ho_RegionFillUp;
-                HTuple NChannel;
-
-                //***判断电阻是否靠近边界
-                HTuple hv_Area7, hv_Row10, hv_Column10;
-                HObject ho_RegionDifference2, ho_RegionErosion3, ho_RegionIntersection;
-
-                #region ***判断彩色还是黑白
-                HOperatorSet.CountChannels(hoReduced, out NChannel);
-                if (NChannel == 3) //三通道彩色
-                {
-                    //HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
-                    HOperatorSet.Rgb1ToGray(hoReduced, out ho_ImageReduced);
-
-                }
-                else  //单通道黑白
-                {
-                    HOperatorSet.CopyObj(hoReduced, out ho_ImageReduced, 1, 1);  //hoReduced 复制到 ho_ImageReduced
-                }
-
-                #region ---- *** 超时处理  *** ----
-
-                if (sw.ElapsedMilliseconds > iTimeout)
-                {
-                    sw.Stop();
-                    listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
-                    return listObj2Draw;
-                }
-                #endregion
                 #endregion
 
-
-                HObject ho_GrayImage, ho_Region, ho_Rectangle, ho_ImageReduce, ho_Region1, ho_RegionDilation, ho_ImageReduce1, ho_ImageMean,
-                   ho_RegionDynThresh, ho_ConnectedRegions1, ho_Rectangle1;
-                HObject ho_SelectedRegions2, ho_RegionUnion;
-                HTuple hv_Area, hv_Row1, hv_Column1;
-                ho_GrayImage = ho_ImageReduced;
-                HObject ho_Region_Duanmian;
-                HObject ho_Region_Err2;
 
                 duanmian_dingwei(ho_GrayImage, out ho_Region_Duanmian, hv_parameter, out hv_NGCode);
 
-                #region ***程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
@@ -4080,6 +4125,7 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+                #region 缺陷显示（duanmian_dingwei）
                 HOperatorSet.AreaCenter(ho_Region_Duanmian, out Areakkk, out Rowkkk, out Colkkk);
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(1))) != 0) //确定端面面积51963,
                 {
@@ -4242,11 +4288,13 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                     #endregion
                 }
+                #endregion
+
 
                 //端面缺陷检测
                 Detect_Err_12(ho_GrayImage, ho_Region_Duanmian, out ho_Region_Err2, hv_parameter, out hv_NGCode);
 
-                #region ***程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
@@ -4254,6 +4302,9 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                 }
                 #endregion
+
+                #region 缺陷显示（Detect_Err_12）
+
 
                 HOperatorSet.CountObj(ho_Region_Err2, out hv_Num);
                 HOperatorSet.Union1(ho_Region_Err2, out hoUnion);
@@ -4279,10 +4330,10 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                     #endregion
                 }
+                #endregion
 
 
-
-                #region//调试模式
+                #region  调试模式
                 if (is_Debug)
                 {
                     syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
@@ -4298,15 +4349,16 @@ namespace SiyarSixsDetect
                 strMessage = DebugPrint(strDebug, is_Debug);
                 #endregion
 
-
-
-                //检测程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
                     dhDll.frmMsg.Log("背导ok" + "程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
                     return listObj2Draw;
                 }
+                #endregion
+
+
 
                 //OK绘制蓝色矩形
                 List<PointF> lnBarcodeOK = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
@@ -4333,7 +4385,7 @@ namespace SiyarSixsDetect
             catch (Exception exc)
             {
                 listObj2Draw[1] = "NG-程序出错";
-                dhDll.frmMsg.Log("sySixSideDetect56", "", exc, dhDll.logDiskMode.Error, 0);
+                dhDll.frmMsg.Log("sySixSideDetect12", "", exc, dhDll.logDiskMode.Error, 0);
                 return listObj2Draw;
             }
             finally
@@ -4349,7 +4401,7 @@ namespace SiyarSixsDetect
         public static List<object> sySixSideDetect_0603R_Camera34(HObject hoImage, List<PointF[]> lkkPolygon, string strParams, ref string strMessage)
         {
 
-            #region  *** 34相机 六面机前后面 ***
+            #region  *** 34相机 六面机左右面 ***
             if (bUseMutex) muDetect12.WaitOne();
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -4359,15 +4411,17 @@ namespace SiyarSixsDetect
             try
             {
                 HObject hoRegion, hoReduced, hoConcate, hoUnion;
-
-                HObject ho_ImageClosing;
                 HObject ho_RegionSel;
-
                 HTuple hv_Area, hv_Phi, hv_Length1, hv_Length2, hv_Row1;
-                HTuple hv_Row, hv_Column, Areakkk, Rowkkk, Colkkk, hv_Num;
+                HTuple hv_Row, hv_Column, hv_Num;
                 HTuple hv_Column1, hv_Max1;
+                //新声明
+                HObject ho_GrayImage;
+                HObject ho_RegionErrDConn, ho_Image1, ho_Image3;
+                HTuple NChannel;
 
-                //***判断电阻是否靠近边界
+                HObject ho_Region_cemian, ho_Rectangle_Cemian;
+                HTuple hv_NGCode, hv_parameter;
 
                 #region 调试模式初始化
                 bool is_Debug;
@@ -4384,8 +4438,6 @@ namespace SiyarSixsDetect
                 //初始化调试输出内容
                 string strDebug = "";
                 #endregion
-
-
 
 
 
@@ -4429,50 +4481,106 @@ namespace SiyarSixsDetect
 
                 #endregion
 
+                #region  //34相机参数(接收界面传递的参数)
                 string[] strUserParam = strParams.Split('#');
                 //3,4相机参数             
-                int iLength1 = int.Parse(strUserParam[30]);      //iLength1  = 145    半长
-                int iLength1Scale = int.Parse(strUserParam[31]); //iLength1Scale = 15 半长变化值
-                int iLength2 = int.Parse(strUserParam[32]);      //iLength2  = 45     半宽
-                int iLength2Scale = int.Parse(strUserParam[33]); //iLength2Scale = 15 半宽变化值
+                int iLength1 = int.Parse(strUserParam[4]);      //iLength1  = 145    半长
+                int iLength1Scale = int.Parse(strUserParam[5]); //iLength1Scale = 15 半长变化值
+                int iLength2 = int.Parse(strUserParam[6]);      //iLength2  = 45     半宽
+                int iLength2Scale = int.Parse(strUserParam[7]); //iLength2Scale = 15 半宽变化值
 
-                int hv_iThr_Cudingwei = int.Parse(strUserParam[34]);     //粗定位阈值
-                int hv_AreaDuanmian = int.Parse(strUserParam[35]);      //侧面预期面积
+                int hv_iThr_Cudingwei = int.Parse(strUserParam[8]);     //粗定位阈值
+                int hv_AreaDuanmian = int.Parse(strUserParam[9]);      //侧面预期面积
 
-                int hv_iPos_Sigma = int.Parse(strUserParam[36]);    //寻边参数1
-                int hv_iPos_Thr1 = int.Parse(strUserParam[37]);      //寻边参数2
-                int hv_iPos_Thr2 = int.Parse(strUserParam[38]);      //寻边参数2
-
-
-                int hv_iMaskWith = int.Parse(strUserParam[39]);    //侧面提取mean函数参数
-                int hv_iDyn_Thr = int.Parse(strUserParam[40]);    //侧面提取dyn_thr函数参数
-                int hv_iOpen1 = int.Parse(strUserParam[41]);     //开运算
-
-                float hv_iErrShink1 = float.Parse(strUserParam[42]);     //缺陷搜索范围宽度
-                float hv_iErrShink2 = float.Parse(strUserParam[43]);     //缺陷搜索范围高度
-                int hv_iErrThr = int.Parse(strUserParam[44]);     //内部缺陷阈值
-                int hv_iErrArea = int.Parse(strUserParam[45]);     //内部缺陷面积
+                int hv_iPos_Sigma = int.Parse(strUserParam[10]);    //寻边参数1
+                int hv_iPos_Thr1 = int.Parse(strUserParam[11]);      //寻边参数2
+                int hv_iPos_Thr2 = int.Parse(strUserParam[12]);      //寻边参数2
 
 
+                int hv_iMaskWith = int.Parse(strUserParam[13]);    //侧面提取mean函数参数
+                int hv_iDyn_Thr = int.Parse(strUserParam[14]);    //侧面提取dyn_thr函数参数
+                int hv_iOpen1 = int.Parse(strUserParam[15]);     //开运算
 
+                float hv_iErrShink1 = float.Parse(strUserParam[16]) / 100;     //缺陷搜索范围宽度
+                float hv_iErrShink2 = float.Parse(strUserParam[17]) / 100;     //缺陷搜索范围高度
+                int hv_iErrThr = int.Parse(strUserParam[18]);     //内部缺陷阈值
+                int hv_iErrArea = int.Parse(strUserParam[19]);     //内部缺陷面积
 
-
+                int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
+                int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
 
 
 
-                HObject ho_RegionErrDConn, ho_RegionDark, ho_ImageReduced2, ho_RectPu, ho_RegionOpening, ho_Image1, ho_ImageReduced, ho_Image3, ho_RegionBinary, ho_ConnectedRegions, ho_MaxRegion, ho_RegionFillUp;
-                HTuple NChannel, hv_UsedThreshold;
+                #endregion
+
+
+                #region****保存所有图片，不区分正反面
+
+                //图片保存路径
+                string ImageSavePathFive = @"D:\六面机检测程序内部图片保存\三号工位\";
+                string ImageSavePathSix = @"D:\六面机检测程序内部图片保存\四号工位\";
+                string ImageSaveFormat;
+
+                if (iSaveImg == 1 | iSaveImg == 2)
+                {
+                    #region 图片格式判断
+                    switch (iSaveImg)//判断保存图片的格式：1-jpeg，2-bmp
+                    {
+                        case 2:
+                            ImageSaveFormat = "bmp";
+                            break;
+                        default:
+                            ImageSaveFormat = "jpeg";
+                            break;
+
+                    }//判断保存图片的格式
+                    #endregion
+
+                    #region//图片保存，如果文件夹不存在则自动创建文件夹
+                    if (iProductCode == 3) //五号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathFive))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathFive);
+                        }
+
+                        Number555 = Number555 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathFive + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + "." + ImageSaveFormat;
+
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }
+
+                    if (iProductCode == 4) //六号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathSix))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathSix);
+                        }
+
+                        Number666 = Number666 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathSix + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + "." + ImageSaveFormat;
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }
+                    #endregion
+                }
+                #endregion
+
+
 
                 #region ***判断彩色还是黑白***
 
                 HOperatorSet.CountChannels(hoReduced, out NChannel);
                 if (NChannel == 3) //三通道彩色
                 {
-                    HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
+                    HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_GrayImage, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
                 }
                 else  //单通道黑白
                 {
-                    HOperatorSet.CopyObj(hoReduced, out ho_ImageReduced, 1, 1);  //hoReduced 复制到 ho_ImageReduced
+                    HOperatorSet.CopyObj(hoReduced, out ho_GrayImage, 1, 1);  //hoReduced 复制到 ho_ImageReduced
                 }
 
                 #region ---- *** 超时处理  *** ----
@@ -4487,23 +4595,12 @@ namespace SiyarSixsDetect
                 #endregion
                 #endregion
 
-                HObject ho_Rectangle1, ho_Rectangle3, ho_ConnectedDark, ho_SelectedRegions1;
-                HTuple hv_Row4, hv_Column4, hv_Phi1, hv_Length11, hv_Length21, hv_Area5, hv_Row5, hv_Column5;
-                HObject ho_GrayImage, ho_Region, ho_SelectedRegions, ho_Rectangle, ho_ImageReduce, ho_Region1, ho_RegionTrans, ho_RegionDilation,
-                    ho_ImageReduce1, ho_Rectangle2, ho_Region_cemian, ho_Rectangle_Cemian;
-                HTuple hv_NGCode, hv_parameter;
 
-                ho_GrayImage = ho_ImageReduced;
 
-                //HTuple hv_iThr_Cudingwei, hv_AreaDuanmian, hv_iPos_Sigma, hv_iPos_Thr, hv_iMaskWith, hv_iDyn_Thr, hv_iOpen1;
 
-                //hv_iThr_Cudingwei = 128;
-                //hv_AreaDuanmian = 20000;
-                //hv_iPos_Sigma = 3;
-                //hv_iPos_Thr = 20;
-                //hv_iMaskWith = 100;
-                //hv_iDyn_Thr = 3;
-                //hv_iOpen1 = 5;
+
+
+                #region 参数传递
                 hv_parameter = new HTuple();
                 hv_parameter = hv_parameter.TupleConcat(hv_iThr_Cudingwei);
                 hv_parameter = hv_parameter.TupleConcat(hv_AreaDuanmian);
@@ -4514,12 +4611,13 @@ namespace SiyarSixsDetect
                 hv_parameter = hv_parameter.TupleConcat(hv_iMaskWith);
                 hv_parameter = hv_parameter.TupleConcat(hv_iDyn_Thr);
                 hv_parameter = hv_parameter.TupleConcat(hv_iOpen1);
-                hv_parameter = hv_parameter.TupleConcat(11111);
+                hv_parameter = hv_parameter.TupleConcat(1111111);
+                #endregion
 
                 //侧面定位，输出侧面区域region
                 cemian_dingwei(ho_GrayImage, out ho_Region_cemian, out ho_Rectangle_Cemian, hv_parameter, out hv_NGCode);
 
-                #region ***程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
@@ -4527,13 +4625,16 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                 }
                 #endregion
+
+                #region 调试模式
                 if (is_Debug)
                 {
                     HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
-                    syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
-                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                }
 
+                }
+                #endregion
+
+                #region 缺陷显示（cemian_dingwei）
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(1))) != 0)  //****粗定位面积54830
                 {
                     #region***粗定位面积不符合要求,判定无定位
@@ -4569,8 +4670,7 @@ namespace SiyarSixsDetect
 
                 HOperatorSet.SmallestRectangle2(ho_Region_cemian, out hv_Row, out hv_Column,
                          out hv_Phi, out hv_Length1, out hv_Length2);
-                HOperatorSet.GenRectangle2(out ho_RectPu, hv_Row, hv_Column, hv_Phi, hv_Length1,
-                           hv_Length2);
+
 
                 #region ***侧面尺寸
                 //*判断产品尺寸（）            
@@ -4630,6 +4730,8 @@ namespace SiyarSixsDetect
 
                 #endregion
 
+                #endregion
+
                 #region ---- *** 超时处理  *** ----
 
                 if (sw.ElapsedMilliseconds > iTimeout)
@@ -4644,6 +4746,7 @@ namespace SiyarSixsDetect
 
 
                 //*检测内部缺陷
+                #region 参数传递
                 HTuple hv_Parameter_Err;
                 hv_Parameter_Err = new HTuple();
                 hv_Parameter_Err = hv_Parameter_Err.TupleConcat(hv_iErrShink1);
@@ -4651,14 +4754,14 @@ namespace SiyarSixsDetect
                 hv_Parameter_Err = hv_Parameter_Err.TupleConcat(hv_iErrThr);
                 hv_Parameter_Err = hv_Parameter_Err.TupleConcat(hv_iErrArea);
 
-                HObject ho_RectangleCemian, ho_Rectangle_Search, ho_Region_Err;
-
+                HObject ho_Rectangle_Search, ho_Region_Err;
+                #endregion
 
                 Detect_Err_34(ho_GrayImage, ho_Region_cemian, out ho_Rectangle_Cemian,
                              out ho_Rectangle_Search, out ho_Region_Err, hv_Parameter_Err,
                              out hv_NGCode);
 
-                #region ***程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
@@ -4666,20 +4769,19 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                 }
                 #endregion
+
+                #region  调试模式
                 if (is_Debug)
                 {
-                    //HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
-                    //syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
-                    syShowRegionBorder(ho_Rectangle_Cemian, ref listObj2Draw, "NG");
-                    syShowRegionBorder(ho_Rectangle_Search, ref listObj2Draw, "OK");
-                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                    HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
+                    syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
                 }
+                #endregion
 
-
+                #region 缺陷显示(Detect_Err_34)
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
                 {
-                    #region
-                    //HDevelopStop();
+                    #region                    
                     listObj2Draw[1] = "NG-产品沾污";
                     HOperatorSet.Connection(ho_Region_Err, out ho_RegionErrDConn);
                     hv_Num = 0;
@@ -4707,31 +4809,28 @@ namespace SiyarSixsDetect
                     #endregion
                 }
 
+                #endregion
 
-
-                //调试模式
-                if (is_Debug)
-                {
-                    //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
-                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                }
-
+                //调试模式   
+                #region  调试模式           
                 if (is_Debug)
                 {
                     strDebug += "整体尺寸参数";
+                    //strMessage = DebugPrint(strDebug, is_Debug);
                 }
+                #endregion
 
 
-                strMessage = DebugPrint(strDebug, is_Debug);
 
 
-
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
                     dhDll.frmMsg.Log("背导ok" + "程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
                     return listObj2Draw;
                 }
+                #endregion
 
 
                 #region ---- *** 超时处理  *** ----
@@ -4752,7 +4851,7 @@ namespace SiyarSixsDetect
             catch (Exception exc)
             {
                 listObj2Draw[1] = "NG-程序出错";
-                dhDll.frmMsg.Log("sySixSideDetect12", "", exc, dhDll.logDiskMode.Error, 0);
+                dhDll.frmMsg.Log("sySixSideDetect34", "", exc, dhDll.logDiskMode.Error, 0);
                 return listObj2Draw;
             }
             finally
@@ -4764,12 +4863,14 @@ namespace SiyarSixsDetect
 
         }
 
-        //六面机0603 56 相机 算法  引用文件14  
+        //六面机0603 56 相机 算法  引用文件16  
         public static List<object> sySixSideDetect_0603R_Camera56_OCR(HObject hoImage, HObject ho_ModelRegion, HTuple hv_ModelID, HTuple hv_ModelParam, List<PointF[]> lkkPolygon, string strParams, ref string strMessage)
         {
             #region  *** 0603 带字码检测  ***
-            #region  *** 56相机 六面机 正反面  ***
 
+            #region  *** 56相机 六面机上下面  ***
+           int hv_ipix22 = 1;
+            dhDll.frmMsg.Log("背导ok" + "00000000" + "," + hv_ipix22.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
             //dhDll.clsFunction.writeTxtFile("D:\\1111.txt", System.IO.FileMode.Create, new List<string>(strUserParam));
 
@@ -4779,14 +4880,12 @@ namespace SiyarSixsDetect
             List<object> listObj2Draw = new List<object>();
             //添加元素
             listObj2Draw.Add(0); listObj2Draw.Add("NG"); listObj2Draw.Add(888);
-
-
             try
             {
                 HObject ho_GrayImage;
                 HTuple hv_Length1_1, hv_Length2_2;
                 HObject hoReduced = null, hoConcate = null, hoRegion = null, hoUnion = null, ho_RegionSel = null, hoRegionsConn = null, hoSelectedRegions = null, ho_Rectangle = null;
-                HObject ho_Regionpen = null, ho_RegionTrans = null;
+                HObject ho_RegionTrans = null;
                 HTuple NChannel, hv_Num;
                 HTuple hv_Area, hv_Row111, hv_Column111, RowDDD, ColDDD, PhiDDD, Length1DDD, Length2DDD;
                 HObject ho_Rects;
@@ -4875,10 +4974,6 @@ namespace SiyarSixsDetect
                 int Ilenth3diff_beimian = int.Parse(strUserParam[23]); // 背电极高度差
 
 
-
-
-
-
                 int Ilenth4Sum_miandianji = int.Parse(strUserParam[24]);// 面电极电极宽度和
                 int Ilenth4diff_miandianji = int.Parse(strUserParam[25]);//面两电极宽度差
                 int iSmallestArea_miandianji = int.Parse(strUserParam[26]); //面电极最小面积
@@ -4914,23 +5009,7 @@ namespace SiyarSixsDetect
 
                 int hv_iWhiteArea = int.Parse(strUserParam[53]);//背面-瓷体沾锡面积 
 
-                //int iBlackArea4 = int.Parse(strUserParam[57]);//背面-瓷体沾锡面积 
-
-
-
                 //第二页参数
-                //int iSmallestArea = int.Parse(strUserParam[46]); //电极最小面积
-                //int iBiggstArea = int.Parse(strUserParam[47]);   //电极最大面积
-
-
-
-
-
-
-
-
-
-
 
                 int hv_iGlobalThr = int.Parse(strUserParam[54]);//背面-全局沾污面积                
                 int iBlackArea1 = int.Parse(strUserParam[55]);//背面-全局沾污面积
@@ -4958,11 +5037,6 @@ namespace SiyarSixsDetect
                 int hv_iErrHeight = int.Parse(strUserParam[71]);//保护层崩碎缺陷高度（小于该高度不视作缺陷）
 
 
-
-
-
-                //int EroWidth4 = int.Parse(strUserParam[70]);//保护层腐蚀宽度4
-                //int EroHeight4 = int.Parse(strUserParam[71]);//保护层腐蚀高度4
                 int EroWidth3 = int.Parse(strUserParam[72]);//保护层腐蚀宽度3
                 int EroHeight3 = int.Parse(strUserParam[73]);//保护层腐蚀高度3
 
@@ -4982,21 +5056,6 @@ namespace SiyarSixsDetect
                 int iScale_width_2 = int.Parse(strUserParam[83]);// 上爬宽度-2 
 
 
-                //int iRegionOpe = int.Parse(strUserParam[84]);// 焊锡缺陷检测开运算阈值                            
-                //int hv_iArea_shangpa2 = int.Parse(strUserParam[85]);// 上爬不足总面积
-
-
-
-
-
-                //int iScale_height_3 = int.Parse(strUserParam[86]);//上爬高度-3
-                //int iScale_width_3 = int.Parse(strUserParam[87]);// 上爬宽度-3           
-                //int iwidth = int.Parse(strUserParam[88]);//上爬不足最小宽度
-                //int iArea = int.Parse(strUserParam[89]);//焊锡缺陷检测，最小面积
-
-
-
-
                 //字码缺陷检测
                 int hv_iOnorOff = int.Parse(strUserParam[84]);//是否开启字符个数检测（1开启，0关闭）
                 int hv_iNum_MK = int.Parse(strUserParam[85]);  //字码个数
@@ -5010,6 +5069,10 @@ namespace SiyarSixsDetect
                 int hv_iOpen_MK2 = int.Parse(strUserParam[90]);//开运算参数
 
                 int hv_iClosing_duanxian = int.Parse(strUserParam[91]);//字符断线（越小对断线越敏感）
+                int hv_iClosing_ZIMATIQV = int.Parse(strUserParam[92]);//字符提取
+
+
+
 
                 //其它参数
                 int iProductCode = int.Parse(strUserParam[94]);  //产品类别(5-五号工位，6-六号工位)：
@@ -5017,6 +5080,14 @@ namespace SiyarSixsDetect
                 float ipix = float.Parse(strUserParam[96]);  //像素距离到实际距离的转换系数
                 ipix = ipix / 1000000;
 
+                int iSaveImg2 = int.Parse(strUserParam[97]);//
+                
+
+                #region 2020-04-14  将参数写入文档
+                //如果文件不存在，则创建；存在则覆盖
+                //该方法写入字符数组换行显示           
+                //System.IO.File.WriteAllLines(@"C:\testDir\test.txt", strUserParam, Encoding.UTF8);
+                #endregion
 
 
                 #endregion
@@ -5038,33 +5109,92 @@ namespace SiyarSixsDetect
 
                 #endregion
 
+                #region****保存所有图片，不区分正反面
+
+                //图片保存路径
+                string ImageSavePathFive = @"D:\六面机检测程序内部图片保存\五号工位\";
+                string ImageSavePathSix = @"D:\六面机检测程序内部图片保存\六号工位\";
+                string ImageSaveFormat;
+
+                if (iSaveImg == 1 | iSaveImg == 2 )
+                {
+                    #region 图片格式判断
+                    switch (iSaveImg)//判断保存图片的格式：1-jpeg，2-bmp
+                    {
+                        case 2:
+                             ImageSaveFormat = "bmp";
+                            break;                    
+                        default:
+                             ImageSaveFormat = "jpeg";
+                            break;
+
+                    }//判断保存图片的格式
+                    #endregion
+
+                    #region//图片保存，如果文件夹不存在则自动创建文件夹
+                    if (iProductCode == 5) //五号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathFive))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathFive);
+                        }
+
+                        Number555 = Number555 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathFive + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + "." + ImageSaveFormat;
+                       
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }
+
+                    if (iProductCode == 6) //六号相机
+                    {
+                        if (!System.IO.Directory.Exists(ImageSavePathSix))
+                        {
+                            System.IO.Directory.CreateDirectory(ImageSavePathSix);
+                        }
+
+                        Number666 = Number666 + 1;
+                        //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        hv_num4 = ImageSavePathSix + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + "."+ ImageSaveFormat;
+                        HOperatorSet.WriteImage(hoImage, ImageSaveFormat, 0, hv_num4);
+                    }                                       
+                    #endregion  
+                }
+                #endregion
 
 
+
+                #region 变量声明
                 HTuple hv_NGCode;
                 HTuple iAreaDiff = 64000; //左右面积最大差异8000
 
 
                 HTuple hv_Rectangularity;//判断背面电极矩形度
                 HTuple hv_Width1, hv_Height1;
-                HObject ho_RegionClosing1, ho_RegionBinary;
                 HTuple hv_Row1, hv_Column1;
-                HTuple Row, Cloumn, Row2, Cloumn2, Phi;
-                HTuple hv_Phi, hv_Length1_std, hv_Length2_std, Deg, hv_Row, hv_Cloumn;
+
+                HTuple hv_Phi, hv_Length1_std, hv_Length2_std, Deg, hv_Row;
                 HTuple hv_Column;
                 HTuple hv_Length1, hv_Length2, hv_Deg;
                 HTuple hv_UsedThreshold;
 
-                HObject ho_RegionErr, ho_SelectedRegions, ho_RegionUnion, hv_RegionDianji, ho_Rectangle_dianji2;
-                HObject ho_Region_ZiMa, ho_reduced_ZiMa, RegionMK, rectangle2;
+                HObject ho_RegionClosing1, ho_RegionBinary;
+                HObject ho_RegionErr, ho_SelectedRegions, ho_RegionUnion;
+                HObject ho_Region_ZiMa;
                 HObject ho_RegionErr1, ho_RegionErr2, ho_RegionErosion;
-                HObject ho_RegionFillUp1, RegionCnn, ho_RegionMax, ho_ImageReduced;
-                HObject ho_Err_RegionConn;
-                HObject ho_UnionDianji, ho_Regions2, ho_Regionpen2, hoRegionConnection, ho_SelectedRegions2;
+
+
+
                 HObject ho_Region_cudingwei, ho_Rectangle1_wudingwei, ho_Rectangle2_wudingwei;
                 HObject ho_Region_citi, ho_Region_dianji;
                 HObject hoRegionsConn2;
                 HObject ho_RegionRect2_dianji_zhengmian, ho_RegionTrans_dianji_zhengmian;
                 HObject ho_RegionErr3, ho_Region_return;
+
+                #endregion
+
                 //获取图像尺寸，用于检测五六号相机电阻是否靠近图像边缘
                 HOperatorSet.GetImageSize(hoImage, out hv_Width1, out hv_Height1);
 
@@ -5090,14 +5220,12 @@ namespace SiyarSixsDetect
                     dhDll.frmMsg.Log("超时311," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
                     return listObj2Draw;
                 }
-
-
                 #endregion
 
 
 
                 //判断彩色还是黑白
-                #region****判断彩色还是黑白
+                #region****判断彩色还是黑白，彩色图像二值化
                 HOperatorSet.CountChannels(hoReduced, out NChannel);
                 if (NChannel == 3) //三通道彩色
                 {
@@ -5113,9 +5241,6 @@ namespace SiyarSixsDetect
 
                 #region --- ***无定位检测 *** ---
                 //开始检测 ho_GrayImage
-
-
-
                 HTuple hv_iFixThres = iFixThres;
                 HTuple hv_iArea1 = hv_iArea_heitu;   //500;  //检测是否为黑图的面积阈值，如果图像中符合特定灰度值的区域像素小于该值，判定无定位
                 HTuple hv_iOpeWidth1 = 5;//粗定位，开运算宽度阈值
@@ -5126,11 +5251,13 @@ namespace SiyarSixsDetect
                 HTuple hv_iLength1Scale = iLength1Scale;
                 HTuple hv_iLength2Scale = iLength2Scale;
                 HTuple hv_iRowMin = iBorderScale;
-                HTuple hv_num1 = 20;//找边函数，卡尺数量
                 HTuple hv_iArea2 = hv_iArea_cudingwei;// 8000;//粗定位，用于筛选电极，确定电极数量，判断正反面
                 HTuple hv_ipix = ipix;
 
-                HObject ho_Image, ho_Err_Region2;
+
+
+
+                dhDll.frmMsg.Log("背导ok" + "11111" + "," + hv_ipix.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
 
                 #region ---- *** 无定位 *** ----
@@ -5141,11 +5268,11 @@ namespace SiyarSixsDetect
                           hv_iArea2, out hv_NGCode, out hv_Deg, out hv_Length1,
                           out hv_Length2);
 
-                #region ***程序出错
+                #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
-                    dhDll.frmMsg.Log("程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                    dhDll.frmMsg.Log("程序出错-无定位检测" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
                     return listObj2Draw;
                 }
                 #endregion
@@ -5155,7 +5282,7 @@ namespace SiyarSixsDetect
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(5))) != 0)
                 {
                     #region***无定位-黑图
-                    listObj2Draw[1] = "NG-无定位";//"NG-尺寸异常";
+                    listObj2Draw[1] = "NG-无定位"; ;
                     syShowRegionBorder(hoUnion, ref listObj2Draw, "NG");  //显示搜索边界
                     //输出NG详情
                     lsInfo2Draw.Add("黑图");
@@ -5171,9 +5298,8 @@ namespace SiyarSixsDetect
 
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(6))) != 0)
                 {
-
                     #region***判断产品角度，歪斜过大直接无定位 正负10度
-                    listObj2Draw[1] = "NG-无定位";//"NG-尺寸异常";
+                    listObj2Draw[1] = "NG-无定位"; ;
                     syShowRegionBorder(ho_Rectangle2_wudingwei, ref listObj2Draw, "NG");
                     //输出NG详情                   
                     lsInfo2Draw.Add("最大歪斜角度:" + hv_iAngleScale.D.ToString("0.0") + " 度");
@@ -5185,13 +5311,12 @@ namespace SiyarSixsDetect
                     listObj2Draw.Add(new PointF(1800, 100));
                     return listObj2Draw;
                     #endregion
-
                 }
 
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(7))) != 0)
                 {
                     #region****检测电阻整体长宽尺寸
-                    listObj2Draw[1] = "NG-无定位";//尺寸差异较大                
+                    listObj2Draw[1] = "NG-无定位";
                     syShowRegionBorder(ho_Rectangle2_wudingwei, ref listObj2Draw, "NG");
                     //输出NG详情
                     lsInfo2Draw.Add("宽度异常");
@@ -5212,7 +5337,7 @@ namespace SiyarSixsDetect
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(8))) != 0)
                 {
                     #region****检测电阻整体长宽尺寸
-                    listObj2Draw[1] = "NG-无定位";//尺寸差异较大                
+                    listObj2Draw[1] = "NG-无定位";
                     syShowRegionBorder(ho_Rectangle2_wudingwei, ref listObj2Draw, "NG");
                     //输出NG详情
                     lsInfo2Draw.Add("高度异常");
@@ -5248,6 +5373,7 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #endregion
+                dhDll.frmMsg.Log("背导ok" + "2222" + "," + hv_ipix.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
 
                 HOperatorSet.CountObj(ho_Region_cudingwei, out hv_Num);
@@ -5279,15 +5405,28 @@ namespace SiyarSixsDetect
 
                 }
                 #endregion
-
-
+                          
 
 
                 if (hv_Num == 1) //背导
                 {
                     #region---- *** 背导朝上 *** ----
 
+                    #region 调试模式
+                    if (is_Debug)
+                    {
+                        //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
+                        //dhDll.frmMsg.Log("背导ok" + "77777777" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                    }
 
+                    if (is_Debug)
+                    {
+                        strDebug += "整体尺寸参数";
+                    }
+
+
+                    strMessage = DebugPrint(strDebug, is_Debug);
+                    #endregion
 
 
                     #region ---- *** 背导朝上-尺寸不符检测 *** ----               
@@ -5575,21 +5714,7 @@ namespace SiyarSixsDetect
                     //导体长边不能小于
                     HOperatorSet.SmallestRectangle2(ho_SortedRegions, out RowDDD, out ColDDD, out PhiDDD, out hv_Length1_1, out hv_Length2_2);
                     HOperatorSet.GenRectangle2(out ho_Rects, RowDDD, ColDDD, PhiDDD, hv_Length1_1, hv_Length2_2);
-                    //HOperatorSet.HeightWidthRatio(ho_Rects, out Length1DD, out Length2DD, out hv_Ratio);
 
-                    //Length1DDD = Length1DD / 2;
-                    //Length2DDD = Length2DD / 2;
-
-                    //Length1DDD = hv_Length1_1 * 2 * ipix * 1000; //像素长度转换为实际距离
-                    //Length2DDD = hv_Length2_2 * 2 * ipix * 1000; //像素长度转换为实际距离                 
-
-                    ////平均高度测量
-                    //HTuple hv_height;
-                    //hv_height = (hv_Area / (hv_Length2_2 * 2)) / 2;
-
-
-                    //Length1DDD = hv_height * 2 * ipix * 1000; //像素长度转换为实际距离
-                    //hv_height = Length1DDD;
 
                     Length1DDD = hv_height; //像素长度转换为实际距离
                     Length2DDD = hv_Length2_2 * 2 * ipix * 1000; //像素长度转换为实际距离       
@@ -5900,6 +6025,7 @@ namespace SiyarSixsDetect
 
 
                     dianji_heidian(ho_GrayImage, ho_Region_dianji, out ho_BlackERR2, hv_Parameter_DJ, out hv_NGCode);
+
                     #region ***程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                     {
@@ -5908,6 +6034,7 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                     }
                     #endregion
+
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(32))) != 0)
                     {
                         #region*** NG-产品沾污-电极-黑色沾污
@@ -5964,6 +6091,7 @@ namespace SiyarSixsDetect
                     hv_Parameter_CT = hv_Parameter_CT.TupleConcat(hv_iWhiteArea);
 
                     citi_zhangwu(ho_GrayImage, ho_Region_citi, out ho_BlackErr, out ho_WhiteErr, hv_Parameter_CT, out hv_NGCode);
+
                     #region ***程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                     {
@@ -6028,7 +6156,6 @@ namespace SiyarSixsDetect
 
                     #endregion
 
-
                     #region ***漏镀缺陷检测
                     HTuple hv_Parameter_LD = new HTuple();
                     HTuple hv_loudu_Mean = new HTuple();
@@ -6039,7 +6166,7 @@ namespace SiyarSixsDetect
                     hv_Parameter_LD = hv_Parameter_LD.TupleConcat(hv_iloudu_mean);
                     hv_Parameter_LD = hv_Parameter_LD.TupleConcat(hv_iloudu_divstd);
 
-                    //loudu_2(hoReduced, ho_Region_dianji, hv_Parameter_LD, out hv_NGCode, out mean_MK);
+
 
                     loudu_2(hoReduced, ho_Region_dianji, ho_Region_citi, hv_Parameter_LD, out hv_NGCode, out hv_loudu_Mean, out hv_loudu_div);
 
@@ -6053,7 +6180,6 @@ namespace SiyarSixsDetect
                     }
                     #endregion
 
-
                     #region 调试模式
                     if (is_Debug)
                     {
@@ -6063,9 +6189,8 @@ namespace SiyarSixsDetect
 
                     #endregion
 
-
+                    #region 缺陷显示（loudu_2）
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(40))) != 0)
-
                     {
                         #region*** NG-产品背电极-漏镀
 
@@ -6087,8 +6212,10 @@ namespace SiyarSixsDetect
 
                         #endregion
                     }
+                    #endregion
 
                     ho_Region_return = ho_Region_dianji;
+
                     #endregion
 
                     #region ---- *** 超时处理 *** ----
@@ -6118,15 +6245,13 @@ namespace SiyarSixsDetect
                     #endregion
 
                     #endregion
-                }
+                }// 背导 
+
 
 
                 else //正导
                 {
                     #region ---- *** 正导朝上  *** ----
-
-
-
 
 
                     #region ---- *** 无定位+尺寸检测  *** ----
@@ -6136,14 +6261,21 @@ namespace SiyarSixsDetect
                     //输出：hoSelectedRegions_dianji_zhengmian（电极region）
 
 
+
+                    /*2020-04-14
+                     * "7"-"max_separability"
+                     * 参数异常
+                     */
                     HOperatorSet.BinaryThreshold(ho_GrayImage, out ho_Region, "max_separability", "light", out hv_UsedThreshold);
                     HOperatorSet.Threshold(ho_GrayImage, out ho_RegionBinary, hv_UsedThreshold + iFixThres2, 255);
                     HOperatorSet.ClosingRectangle1(ho_RegionBinary, out ho_RegionClosing1, 4, 3);
                     HOperatorSet.Connection(ho_RegionClosing1, out hoRegionsConn);
-                    HOperatorSet.SelectShape(hoRegionsConn, out hoRegionsConn2, "area", "and", 7000, 99999);
-                    HOperatorSet.SelectShape(hoRegionsConn2, out hoSelectedRegions, "height", "and", 170, 300);
+                    HOperatorSet.SelectShape(hoRegionsConn, out hoRegionsConn2, "area", "and", 3000, 99999);
+                    HOperatorSet.SelectShape(hoRegionsConn2, out hoSelectedRegions, "height", "and", 150, 300);
                     HObject hoSelectedRegions_dianji_zhengmian = hoSelectedRegions;
                     HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
+
+
                     if (hv_Num != 2)
                     {
                         #region***电极提取失败-尺寸不符
@@ -6221,10 +6353,6 @@ namespace SiyarSixsDetect
                     #region****电极面积判定
 
                     HOperatorSet.AreaCenter(hoSelectedRegions_dianji_zhengmian, out hv_Area, out hv_Row, out hv_Column);
-
-
-
-
 
                     if ((hv_Area.TupleSelect(0) < iSmallestArea_miandianji) || (hv_Area.TupleSelect(1) < iSmallestArea_miandianji))    //面积小于iSmallestArea = 6000
                     {
@@ -6386,8 +6514,6 @@ namespace SiyarSixsDetect
 
                     #region ****电极宽度测量
 
-
-
                     if ((Length2DDD.TupleSelect(0) < hv_iFrontDianji_Width_Min) || (Length2DDD.TupleSelect(1) < hv_iFrontDianji_Width_Min))
                     {
                         #region  ****电极宽度波动幅度-电极宽度过小
@@ -6501,15 +6627,13 @@ namespace SiyarSixsDetect
 
                     #endregion
 
-
-
-
                     #endregion
 
-                    #region 上爬不足检测
+                    #region ***上爬不足检测
 
                     //上爬不足检测函数
 
+                    #region 参数传递
                     HTuple hv_Parameter_SP = new HTuple();
                     hv_Parameter_SP = hv_Parameter_SP.TupleConcat(hv_leixing);
                     hv_Parameter_SP = hv_Parameter_SP.TupleConcat(hv_iShangpa);
@@ -6520,15 +6644,13 @@ namespace SiyarSixsDetect
                     hv_Parameter_SP = hv_Parameter_SP.TupleConcat(hv_iScale_width_1);
                     hv_Parameter_SP = hv_Parameter_SP.TupleConcat(hv_iScale_height_1);
 
-
                     HObject ho_RegionDetection;
-
-
+                    #endregion
 
                     shangpabuzu3(ho_GrayImage, hoSelectedRegions_dianji_zhengmian, out ho_RegionErr, out ho_RegionDetection, hv_Parameter_SP, out hv_NGCode);
 
 
-                    #region  ****Debug
+                    #region  调试模式
                     if (is_Debug)
                     {
                         HOperatorSet.Connection(ho_RegionDetection, out hoRegionsConn);
@@ -6537,6 +6659,17 @@ namespace SiyarSixsDetect
                     }
                     #endregion
 
+                    #region 程序出错
+                    if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
+                    {
+                        listObj2Draw[1] = "NG-程序出错";
+                        dhDll.frmMsg.Log("程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                        return listObj2Draw;
+                    }
+                    #endregion
+
+
+                    #region 缺陷显示
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(4))) != 0)
                     {
                         #region
@@ -6559,25 +6692,15 @@ namespace SiyarSixsDetect
 
                         #endregion
                     }
-
-                    #region ***程序出错
-                    if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
-                    {
-                        listObj2Draw[1] = "NG-程序出错";
-                        dhDll.frmMsg.Log("程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                        return listObj2Draw;
-                    }
-                    #endregion
-
                     #endregion
 
 
+                    #endregion
 
                     #region ***字码检测
 
+                    #region 参数传递
                     HTuple hv_iExp_MK = 7;//需要和CreatModelMK函数中的参数对应
-
-
 
                     HTuple hv_Parameter_MK = new HTuple();
                     hv_Parameter_MK = hv_Parameter_MK.TupleConcat(hv_iScore_MK);
@@ -6593,6 +6716,8 @@ namespace SiyarSixsDetect
                     hv_Parameter_MK = hv_Parameter_MK.TupleConcat(hv_iOnorOff);
                     hv_Parameter_MK = hv_Parameter_MK.TupleConcat(hv_iClosing_duanxian);
 
+                    hv_Parameter_MK = hv_Parameter_MK.TupleConcat(hv_iClosing_ZIMATIQV);
+                    #endregion
 
 
                     MK(ho_GrayImage, ho_ModelRegion, hoSelectedRegions_dianji_zhengmian,
@@ -6600,10 +6725,19 @@ namespace SiyarSixsDetect
                        out ho_RegionErosion, hv_ModelID, hv_ModelParam, hv_Parameter_MK
                        , out hv_NGCode);
 
-                    syShowRegionBorder(ho_Region_ZiMa, ref listObj2Draw, "OK");
 
+                    #region 调试模式
+                    syShowRegionBorder(ho_Region_ZiMa, ref listObj2Draw, "OK");//持续显示
 
-                    #region ***程序出错
+                    if (is_Debug)
+                    {
+                        //HOperatorSet.Connection(ho_Region_ZiMa, out hoRegionsConn);
+                        //syShowRegionBorder(hoRegionsConn, ref listObj2Draw, "OK");
+                        //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                    }
+                    #endregion                   
+
+                    #region 程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                     {
                         listObj2Draw[1] = "NG-程序出错";
@@ -6612,6 +6746,7 @@ namespace SiyarSixsDetect
                     }
                     #endregion
 
+                    #region 缺陷显示（MK）
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(1))) != 0)
                     {
                         #region***标记断线
@@ -6693,17 +6828,17 @@ namespace SiyarSixsDetect
 
                         #endregion
                     }
-
+                    #endregion
 
                     #endregion
 
-
-                    //hv_NGCode = 34;
-
-
                     #region ***保护层检测                                  
 
-
+                    #region 保护层挂锡缺陷检测
+                    /*挂锡缺陷检测
+                    * 
+                    */
+                    #region 参数传递
                     HObject ho_RegionDetection_IIG2;
 
                     HTuple hv_Parameter_IIG_2 = new HTuple();
@@ -6716,14 +6851,12 @@ namespace SiyarSixsDetect
 
                     hv_Parameter_IIG_2 = hv_Parameter_IIG_2.TupleConcat(hv_iErrWidth);//保护层崩碎缺陷宽度
                     hv_Parameter_IIG_2 = hv_Parameter_IIG_2.TupleConcat(hv_iErrHeight);//保护层崩碎缺陷高度
-
-
-
+                    #endregion
 
                     baohuceng_bengsui_2(ho_GrayImage, hoSelectedRegions_dianji_zhengmian,
                       ho_Region_ZiMa, out ho_RegionErr3, out ho_RegionDetection_IIG2, hv_Parameter_IIG_2, out hv_NGCode);
 
-                    #region ***程序出错
+                    #region 程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                     {
                         listObj2Draw[1] = "NG-程序出错";
@@ -6732,14 +6865,17 @@ namespace SiyarSixsDetect
                     }
                     #endregion
 
+
+                    #region 调试模式
                     if (is_Debug)
                     {
                         HOperatorSet.Connection(ho_RegionDetection_IIG2, out hoRegionsConn);
                         syShowRegionBorder(hoRegionsConn, ref listObj2Draw, "OK");
                         //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-
                     }
+                    #endregion
 
+                    #region 缺陷显示（baohuceng_bengsui_2）
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
                     {
                         #region
@@ -6762,21 +6898,25 @@ namespace SiyarSixsDetect
                         #endregion
                     }
 
+                    #endregion
 
-
-
-
+                    #region 保护层挂锡缺陷检测
+                    /*挂锡缺陷检测
+                    * 
+                    */
+                    #region 参数传递
                     HTuple hv_Parameter_IIG = new HTuple();
                     hv_Parameter_IIG = hv_Parameter_IIG.TupleConcat(hv_leixing);
                     hv_Parameter_IIG = hv_Parameter_IIG.TupleConcat(iProtectBrokenResThres);
                     hv_Parameter_IIG = hv_Parameter_IIG.TupleConcat(iProtectBrokenArea3);
 
                     HObject ho_RegionDetection_IIG;
+                    #endregion
 
                     baohuceng_bengsui(ho_GrayImage, hoSelectedRegions_dianji_zhengmian,
                     ho_Region_ZiMa, out ho_RegionErr3, out ho_RegionDetection_IIG, hv_Parameter_IIG, out hv_NGCode);
 
-                    #region ***程序出错
+                    #region 程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                     {
                         listObj2Draw[1] = "NG-程序出错";
@@ -6785,6 +6925,7 @@ namespace SiyarSixsDetect
                     }
                     #endregion
 
+                    #region 调试模式
                     if (is_Debug)
                     {
                         //HOperatorSet.Connection(ho_RegionDetection_IIG, out hoRegionsConn);
@@ -6792,7 +6933,9 @@ namespace SiyarSixsDetect
                         ////dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
                     }
+                    #endregion
 
+                    #region 缺陷显示（baohuceng_bengsui）
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
                     {
                         #region
@@ -6815,32 +6958,16 @@ namespace SiyarSixsDetect
                         #endregion
                     }
 
-
-
-
-
                     #endregion
 
 
-
-                    ho_Region_return = hoSelectedRegions_dianji_zhengmian;
-                    #endregion
-
-                    #region ---- *** 超时处理  *** ----
-
-                    if (sw.ElapsedMilliseconds > iTimeout)
-                    {
-                        sw.Stop();
-                        listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时311," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
-                        return listObj2Draw;
-                    }
                     #endregion
 
                     #region 调试模式
                     if (is_Debug)
                     {
                         //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
-                        //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                        //dhDll.frmMsg.Log("背导ok" + "999999999" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
                     }
 
@@ -6853,14 +6980,31 @@ namespace SiyarSixsDetect
                     strMessage = DebugPrint(strDebug, is_Debug);
                     #endregion
 
-                }
+                    ho_Region_return = hoSelectedRegions_dianji_zhengmian;
+
+                    #endregion
+
+                    #region ---- *** 超时处理  *** ----
+
+                    if (sw.ElapsedMilliseconds > iTimeout)
+                    {
+                        sw.Stop();
+                        listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时311," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
+                        return listObj2Draw;
+                    }
+                    #endregion
+                    #endregion
+                    #endregion                
+                }// 正导
+
+                #endregion
 
 
-                #region
+                #region  程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
-                    dhDll.frmMsg.Log("程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                   
                     return listObj2Draw;
                 }
 
@@ -6877,91 +7021,91 @@ namespace SiyarSixsDetect
                 }
 
                 //5、6号相机保存图片
-                #region****保存ok图片
-                if (iSaveImg == 1)
-                {
-                    #region//如果文件夹不存在，则自动创建文件夹
-                    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\五号工位\正面"))
-                    {
-                        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\五号工位\正面");
-                    }
+                //#region****保存ok图片
+                //if (iSaveImg == 1)
+                //{
+                //                                                                                                                         #region//如果文件夹不存在，则自动创建文件夹
+                //    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\五号工位\正面"))
+                //    {
+                //        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\五号工位\正面");
+                //    }
 
 
-                    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\五号工位\背面"))
-                    {
-                        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\五号工位\背面");
-                    }
+                //    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\五号工位\背面"))
+                //    {
+                //        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\五号工位\背面");
+                //    }
 
 
-                    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\六号工位\背面"))
-                    {
-                        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\六号工位\背面");
-                    }
+                //    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\六号工位\背面"))
+                //    {
+                //        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\六号工位\背面");
+                //    }
 
 
-                    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\六号工位\正面"))
-                    {
-                        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\六号工位\正面");
-                    }
-                    #endregion
-                    //Number111 = Number111 + 1;
-                    #region //分正背面保存图片
-                    if (iProductCode == 5) //五号相机
-                    {
-                        if (hv_SaveImageNum == 1) //背面
-                        {
-                            Number555 = Number555 + 1;
-                            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                //    if (!System.IO.Directory.Exists(@"D:\六面机检测程序内部图片保存\六号工位\正面"))
+                //    {
+                //        System.IO.Directory.CreateDirectory(@"D:\六面机检测程序内部图片保存\六号工位\正面");
+                //    }
+                //    #endregion
+                //    //Number111 = Number111 + 1;
+                //    #region //分正背面保存图片
+                //    if (iProductCode == 5) //五号相机
+                //    {
+                //        if (hv_SaveImageNum == 1) //背面
+                //        {
+                //            Number555 = Number555 + 1;
+                //            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
-                            hv_num4 = "D:/六面机检测程序内部图片保存/五号工位/背面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
-                            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
+                //            hv_num4 = "D:/六面机检测程序内部图片保存/五号工位/背面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
+                //            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
 
-                            //hv_num4 = "D:/六面外观机/杭州思元六面分选机视觉系统-0903/Images2/5/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
-                            //HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
+                //            //hv_num4 = "D:/六面外观机/杭州思元六面分选机视觉系统-0903/Images2/5/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
+                //            //HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
 
-                        }
-                        else  //正面
-                        {
+                //        }
+                //        else  //正面
+                //        {
 
-                            Number555 = Number555 + 1;
-                            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                            hv_num4 = "D:/六面机检测程序内部图片保存/五号工位/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
-                            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
+                //            Number555 = Number555 + 1;
+                //            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                //            hv_num4 = "D:/六面机检测程序内部图片保存/五号工位/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number555.ToString() + ".jpg";
+                //            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
 
-                        }
-                    }
+                //        }
+                //    }
 
 
 
-                    if (iProductCode == 6) //六号相机
+                //    if (iProductCode == 6) //六号相机
 
-                    {
-                        if (hv_SaveImageNum == 1)  //背面
-                        {
-                            Number666 = Number666 + 1;
-                            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                            hv_num4 = "D:/六面机检测程序内部图片保存/六号工位/背面/" + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + ".jpg";
-                            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
-                        }
-                        else  //正面
-                        {
-                            Number666 = Number666 + 1;
-                            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                            hv_num4 = "D:/六面机检测程序内部图片保存/六号工位/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + ".jpg";
-                            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
-                        }
-                    }
+                //    {
+                //        if (hv_SaveImageNum == 1)  //背面
+                //        {
+                //            Number666 = Number666 + 1;
+                //            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                //            hv_num4 = "D:/六面机检测程序内部图片保存/六号工位/背面/" + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + ".jpg";
+                //            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
+                //        }
+                //        else  //正面
+                //        {
+                //            Number666 = Number666 + 1;
+                //            //dhDll.frmMsg.Log("背导ok" + iProductCode.ToString() + "," + iProductCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                //            hv_num4 = "D:/六面机检测程序内部图片保存/六号工位/正面/" + DateTime.Now.Ticks.ToString() + "-" + Number666.ToString() + ".jpg";
+                //            HOperatorSet.WriteImage(hoImage, "jpg", 0, hv_num4);
+                //        }
+                //    }
 
-                    #endregion  
-                }
-                #endregion
+                //    #endregion  
+                //}
+                //#endregion
 
 
                 return listObj2Draw;
 
-            }
+            }//try
             catch (Exception exc)
-            {
+             {
                 listObj2Draw[1] = "NG-程序出错";
                 dhDll.frmMsg.Log("sySixSideDetect8", "", exc, dhDll.logDiskMode.Error, 0);
                 return listObj2Draw;
@@ -6971,10 +7115,11 @@ namespace SiyarSixsDetect
                 sw.Stop();
                 if (bUseMutex) muDetect8.ReleaseMutex();
             }
-            #endregion
 
 
+
             #endregion
+
         }
 
 
