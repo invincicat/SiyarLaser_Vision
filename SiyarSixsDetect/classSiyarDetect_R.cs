@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -5040,29 +5041,25 @@ namespace SiyarSixsDetect
                 int A_保护层沾锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[110]);     //A_保护层沾锡
 
                 int A_漏镀 = iCheckSelAll ? 1 : int.Parse(strUserParam[111]);         //A_漏镀   
-                 
+                             
+                int A_电阻正面整体角度判定和长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[112]);   //A_电阻正面整体角度判定和长宽判定
+                int A_正面电极面积判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[113]); //A_正面电极面积判定                                                  
+                int A_正面电极长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[114]); //A_正面电极长宽判定
+
+                int A_电阻背面整体角度判定和长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[115]); //A_电阻背面整体角度判定和长宽判定
+                int A_背面电极面积判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[116]); //A_背面电极面积判定              
+                int A_背面电极长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[117]);     //A_背面电极长宽判定
+
+               
+                int A_瓷体挂锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);   //A_瓷体挂锡
+                int A_瓷体脏片 = iCheckSelAll ? 1 : int.Parse(strUserParam[119]); //A_瓷体脏片     
+                                                                              //int A_背面延锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);     //A_背面延锡                                                
 
 
 
+                HTuple Length2DDD_Max, Length2DDD_Min, Length2DDD_X, Length2DDD_X_Std;
+                Length2DDD_X_Std = 2.5;
 
-              
-                //int A_产品沾污 = iCheckSelAll ? 1 : int.Parse(strUserParam[114]); //A_产品沾污
-                //int A_端头崩碎 = iCheckSelAll ? 1 : int.Parse(strUserParam[115]); //A_端头崩碎
-                //int A_溅射深 = iCheckSelAll ? 1 : int.Parse(strUserParam[116]); //A_溅射深              
-                //int A_电极不符 = iCheckSelAll ? 1 : int.Parse(strUserParam[117]);     //A_电极不符
-                //int A_背面延锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);     //A_背面延锡   
-
-                int A_电阻正面整体角度判定和长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[112]);   //A_无定位
-                int A_正面电极面积判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[113]); //A_尺寸不符                                                   
-                int A_正面电极长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[114]); //A_产品沾污
-
-                int A_电阻背面整体角度判定和长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[115]); //A_端头崩碎
-                int A_背面电极面积判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[116]); //A_溅射深              
-                int A_背面电极长宽判定 = iCheckSelAll ? 1 : int.Parse(strUserParam[117]);     //A_电极不符
-
-                int A_背面延锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);     //A_背面延锡  
-                int A_瓷体挂锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[119]);   //A_无定位
-                int A_瓷体脏片 = iCheckSelAll ? 1 : int.Parse(strUserParam[120]); //A_尺寸不符                                                   
 
 
                 #region 2020-04-14  将参数写入文档
@@ -5612,6 +5609,37 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
+
+                    HOperatorSet.TupleMax(Length2DDD, out Length2DDD_Max);
+                    HOperatorSet.TupleMin(Length2DDD, out Length2DDD_Min);
+                    Length2DDD_X = Length2DDD_Max / Length2DDD_Min;
+
+                    if (Length2DDD_X > Length2DDD_X_Std)
+                    {
+                        #region***两电极宽度比值
+                        listObj2Draw[1] = "NG-电极不符"; //"NG-电极异常"
+                        hv_Num = 0;
+                        HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
+                        for (int i = 1; i <= hv_Num; i++)
+                        {
+                            HOperatorSet.SelectObj(hoSelectedRegions, out ho_RegionSel, i);
+                            syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                        }
+                        //输出NG详情
+                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_X_Std);
+                        lsInfo2Draw.Add("OK");
+                        lsInfo2Draw.Add("当前比值：" + Length2DDD_X);
+                        lsInfo2Draw.Add("NG");
+                        listObj2Draw.Add("字符串");
+                        listObj2Draw.Add(lsInfo2Draw);
+                        listObj2Draw.Add(new PointF(1800, 100));
+                        return listObj2Draw;
+                        #endregion
+                    }
+
+
+
+
                     A_背面电极长宽判定END:
                     #endregion
 
@@ -6609,7 +6637,7 @@ namespace SiyarSixsDetect
 
                     if (((Length2DDD.TupleSelect(0) + Length2DDD.TupleSelect(1)).TupleAbs() > Ilenth4Sum_miandianji))
                     {
-                        #region***两电极宽度差值
+                        #region***两电极宽度和
                         listObj2Draw[1] = "NG-电极不符"; //"NG-电极异常"
                         hv_Num = 0;
                         HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
@@ -6653,6 +6681,39 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
+
+
+                  
+
+                    HOperatorSet.TupleMax(Length2DDD, out Length2DDD_Max);                
+                    HOperatorSet.TupleMin(Length2DDD, out Length2DDD_Min);
+                    Length2DDD_X = Length2DDD_Max / Length2DDD_Min;
+
+                    if (  Length2DDD_X > Length2DDD_X_Std)
+                    {
+                        #region***两电极宽度比值
+                        listObj2Draw[1] = "NG-电极不符"; //"NG-电极异常"
+                        hv_Num = 0;
+                        HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
+                        for (int i = 1; i <= hv_Num; i++)
+                        {
+                            HOperatorSet.SelectObj(hoSelectedRegions, out ho_RegionSel, i);
+                            syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                        }
+                        //输出NG详情
+                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_X_Std );
+                        lsInfo2Draw.Add("OK");
+                        lsInfo2Draw.Add("当前比值：" + Length2DDD_X);
+                        lsInfo2Draw.Add("NG");
+                        listObj2Draw.Add("字符串");
+                        listObj2Draw.Add(lsInfo2Draw);
+                        listObj2Draw.Add(new PointF(1800, 100));
+                        return listObj2Draw;
+                        #endregion
+                    }
+
+
+
 
                     A_正面电极长宽判定END:
 
