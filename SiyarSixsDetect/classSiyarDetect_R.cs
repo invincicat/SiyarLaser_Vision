@@ -28,466 +28,7 @@ namespace SiyarSixsDetect
         static HTuple hv_num4;
 
 
-
-        //34相机 六面机前后面  引用文件 7
-        public static List<object> sySixSideDetect_0402R_Camera34(HObject hoImage, List<PointF[]> lkkPolygon, string strParams)
-        {
-
-            #region  *** 34相机 六面机前后面 ***
-            if (bUseMutex) muDetect12.WaitOne();
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            List<object> listObj2Draw = new List<object>();
-            //添加元素
-            listObj2Draw.Add(0); listObj2Draw.Add("OK"); listObj2Draw.Add(888);
-            try
-            {
-                HObject hoRegion, hoReduced, hoConcate, hoUnion;
-                HObject hoEmphasize, ho_BlackReg, ho_DarkPix;
-                HObject ho_RegionSelect, ho_RegionDiff, ho_ImageMean;
-                HObject ho_RegionOpen, ho_RegionConnect, ho_SortedRegion, ho_RegionFill, ho_ImageMaxReduce, ho_RegionConn, ho_RegionSelect1, ho_ImageReduce, ho_ImageClosing, ho_Rectangle, ho_RectangleEro;
-                HObject ho_RegionLight, ho_RegionLights, ho_BiggestRegion, ho_RegionEro, ho_ImageCheck, EdgeAmplitude, ho_Err_RegionConn, ho_RegionSel;
-
-                HTuple hv_Area, hv_Col, hv_Phi, hv_Length1, hv_Length2, hv_Row1, hv_Col1, Areapppp, Rowpppp, Colpppp;
-                HTuple hv_MaxIndex, hv_cmp, hv_I, hv_AreaSelect, hv_Row, hv_Column, Areakkk, Rowkkk, Colkkk, hv_Num;
-                HTuple hv_Column1, hv_Max1, hv_Max2, hv_area;
-
-                //***判断电阻是否靠近边界
-                HTuple hv_Area7, hv_Row10, hv_Column10;
-                HObject ho_RegionDifference2, ho_RegionErosion3, ho_RegionIntersection8;
-
-
-                List<string> lsInfo2Draw = new List<string>();
-
-                #region ****** 生成区域ROI  ******
-
-                HOperatorSet.GenEmptyObj(out hoConcate);
-                for (int igg = 0; igg < lkkPolygon.Count; igg++)
-                {
-                    if (lkkPolygon[igg][0].X == 3)
-                    {
-                        PointF pgg1 = lkkPolygon[igg][1];
-                        PointF pgg2 = lkkPolygon[igg][2];//圆形ROI的直径
-                        double ddistance = Math.Sqrt(Math.Pow(pgg2.X - pgg1.X, 2) + Math.Pow(pgg2.Y - pgg1.Y, 2));
-
-                        HOperatorSet.GenCircle(out hoRegion, pgg1.Y, pgg1.X, ddistance);
-                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
-                    }
-                    else if (lkkPolygon[igg][0].X == 8)
-                    {
-                        PointF pgg1 = lkkPolygon[igg][1];
-                        PointF pgg2 = lkkPolygon[igg][2];//矩形的宽度 高度
-
-                        HOperatorSet.GenRectangle1(out hoRegion, pgg1.Y, pgg1.X, pgg1.Y + pgg2.Y, pgg1.X + pgg2.X);
-                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
-                    }
-                    else
-                    {
-                        PointF pgg1 = lkkPolygon[igg][1];
-                        PointF pgg2 = lkkPolygon[igg][3];//rectangle2的宽度 高度
-
-                        HOperatorSet.GenRectangle2(out hoRegion, pgg1.Y, pgg1.X, lkkPolygon[igg][2].X / 10000, pgg2.X, pgg2.Y);
-                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
-                    }
-                }
-
-                HOperatorSet.Union1(hoConcate, out hoUnion);
-                HOperatorSet.ReduceDomain(hoImage, hoUnion, out hoReduced);
-
-
-                #endregion
-
-                string[] strUserParam = strParams.Split('#');
-                //3,4相机参数
-                int iLength1 = int.Parse(strUserParam[4]);      //iLength1  = 145    半长
-                int iLength1Scale = int.Parse(strUserParam[5]); //iLength1Scale = 15 半长变化值
-                int iLength2 = int.Parse(strUserParam[6]);      //iLength2  = 45     半宽
-                int iLength2Scale = int.Parse(strUserParam[7]); //iLength2Scale = 15 半宽变化值
-                int iErrThres = int.Parse(strUserParam[8]);     //iErrThres  = 40    缺陷阈值40
-                int iErrArea = int.Parse(strUserParam[9]);      //iErrArea = 50      缺陷面积500
-                int iLouduArea1 = int.Parse(strUserParam[10]);    //iLouduArea1=15000     侧面挂锡区域面积15000
-                int iclosing_rext = int.Parse(strUserParam[11]);//iclosing_rext=1(未启用) 初始掩模尺寸
-                int iLouduArea2 = int.Parse(strUserParam[12]);    //iLouduArea2=1500    侧面挂锡区域面积1500
-                int AreaDuanmian = int.Parse(strUserParam[13]);    //iLouduArea2=1500    侧面挂锡区域面积1500
-                int iScale = int.Parse(strUserParam[14]);    //scale_image参数
-
-
-
-
-                HObject ho_RegionErrDConn, ho_RegionErrD, ho_ConnectedRegionDark, ho_RegionDark, ho_ImageReduced2, ho_RegionErosion, ho_RegionOpening2, ho_RectPu, ho_RegionOpening, ho_Image1, ho_ImageReduced, ho_Image3, ho_RegionBinary, ho_ConnectedRegions, ho_MaxRegion, ho_RegionFillUp;
-                HTuple hv_Number, NChannel, hv_UsedThreshold;
-
-                //判断彩色还是黑白
-                HOperatorSet.CountChannels(hoReduced, out NChannel);
-                if (NChannel == 3) //三通道彩色
-                {
-                    HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
-                }
-                else  //单通道黑白
-                {
-                    HOperatorSet.CopyObj(hoReduced, out ho_ImageReduced, 1, 1);  //hoReduced 复制到 ho_ImageReduced
-                }
-
-                #region ---- *** 超时处理  *** ----
-
-                if (sw.ElapsedMilliseconds > iTimeout)
-                {
-                    sw.Stop();
-                    listObj2Draw[1] = "NG-超时";
-                    dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
-                    return listObj2Draw;
-                }
-                #endregion
-
-
-
-
-                HOperatorSet.ScaleImage(ho_ImageReduced, out ho_ImageClosing, 3, -iScale);
-
-                //HOperatorSet.GrayClosingRect(ho_ImageReduced, out ho_ImageClosing, iclosing_rext, iclosing_rext);//11,11
-                HOperatorSet.BinaryThreshold(ho_ImageClosing, out ho_RegionBinary, "max_separability",
-                    "light", out hv_UsedThreshold);
-                HOperatorSet.Connection(ho_RegionBinary, out ho_ConnectedRegions);
-                HOperatorSet.SelectShapeStd(ho_ConnectedRegions, out ho_MaxRegion, "max_area", 70);
-                HOperatorSet.AreaCenter(ho_MaxRegion, out Areakkk, out Rowkkk, out Colkkk);
-
-
-                if (Areakkk < 0.5 * AreaDuanmian)  //****如果端面面积小于设置的最小端面面积的一半，判定无定位
-                {
-                    #region***粗定位面积不符合要求,判定无定位
-                    listObj2Draw[1] = "NG-无定位"; //区域面积不符合要求
-                                                //输出NG详情
-                    HOperatorSet.CountObj(ho_MaxRegion, out hv_Num);
-                    for (int i = 1; i <= hv_Num; i++)
-                    {
-                        HOperatorSet.SelectObj(ho_MaxRegion, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
-                    }
-
-                    lsInfo2Draw.Add("无定位-端面最小面积：" + (0.5 * AreaDuanmian).ToString() + "pix * ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前尺寸：" + Areakkk.D.ToString("0.0") + " pix * ");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion
-                }
-
-
-                if (Areakkk < AreaDuanmian)  //****粗定位面积54830
-                {
-                    #region***粗定位面积不符合要求,判定无定位
-                    listObj2Draw[1] = "NG-尺寸不符"; //区域面积不符合要求
-                                                 //输出NG详情
-                    HOperatorSet.CountObj(ho_MaxRegion, out hv_Num);
-                    for (int i = 1; i <= hv_Num; i++)
-                    {
-                        HOperatorSet.SelectObj(ho_MaxRegion, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
-                    }
-
-                    lsInfo2Draw.Add("端面最小面积：" + AreaDuanmian.ToString() + "pix * ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前尺寸：" + Areakkk.D.ToString("0.0") + " pix * ");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion
-                }
-
-
-
-
-                HOperatorSet.FillUp(ho_MaxRegion, out ho_RegionFillUp);
-                HOperatorSet.OpeningRectangle1(ho_RegionFillUp, out ho_RegionOpening, 5, 5);
-                HOperatorSet.SmallestRectangle2(ho_RegionOpening, out hv_Row, out hv_Column,
-                    out hv_Phi, out hv_Length1, out hv_Length2);
-                HOperatorSet.GenRectangle2(out ho_RectPu, hv_Row, hv_Column, hv_Phi, hv_Length1,
-                    hv_Length2);
-
-                #region***判断电阻是否靠近边界                   
-                //HOperatorSet.ErosionCircle(ho_ImageReduced, out ho_RegionErosion3, 1.1);
-                //HOperatorSet.Intersection(ho_RegionErosion3, ho_RectPu, out ho_RegionIntersection8);
-                //HOperatorSet.Difference(ho_RectPu, ho_RegionIntersection8, out ho_RegionDifference2);
-                //HOperatorSet.AreaCenter(ho_RegionDifference2, out hv_Area7, out hv_Row10, out hv_Column10);
-                //if ((int)(new HTuple(hv_Area7.TupleGreater(0))) != 0)
-                //{
-                //    #region
-                //    listObj2Draw[1] = "NG-无定位";//角度歪斜
-                //    List<PointF> lnBarcode = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-                //    listObj2Draw.Add("多边形");
-                //    listObj2Draw.Add(lnBarcode.ToArray());
-                //    listObj2Draw.Add("NG");
-
-                //    //输出NG详情
-                //    lsInfo2Draw.Add("靠近边界");
-                //    lsInfo2Draw.Add("NG");
-                //    listObj2Draw.Add("字符串");
-                //    listObj2Draw.Add(lsInfo2Draw);
-                //    listObj2Draw.Add(new PointF(1800, 100));
-                //    return listObj2Draw;
-                //    #endregion
-                //}
-                #endregion
-
-                //*判断产品尺寸（145 * 45）
-                HTuple hv_Length1Scale = iLength1Scale;
-                HTuple hv_Length2Scale = iLength2Scale;
-
-                if ((int)((new HTuple(hv_Length1.TupleLess(iLength1 - hv_Length1Scale))).TupleOr(new HTuple(hv_Length1.TupleGreater(
-                    iLength1 + hv_Length1Scale)))) != 0)
-                {
-                    #region
-                    //HDevelopStop();
-                    //NG绘制红色矩形
-                    List<PointF> lnBarcodeNG1 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-
-                    listObj2Draw.Add("多边形");
-                    listObj2Draw.Add(lnBarcodeNG1.ToArray());
-                    listObj2Draw.Add("NG");
-
-                    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
-
-                    //输出NG详情
-                    lsInfo2Draw.Add("1标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion
-                }
-
-                if ((int)((new HTuple(hv_Length2.TupleLess(iLength2 - hv_Length2Scale))).TupleOr(new HTuple(hv_Length2.TupleGreater(
-                    iLength2 + hv_Length2Scale)))) != 0)
-                {
-                    #region                
-                    //NG绘制红色矩形
-                    List<PointF> lnBarcodeNG2 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-
-                    listObj2Draw.Add("多边形");
-                    listObj2Draw.Add(lnBarcodeNG2.ToArray());
-                    listObj2Draw.Add("NG");
-
-                    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
-
-                    //输出NG详情
-                    lsInfo2Draw.Add("1标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion
-                }
-
-                //if ((int)((new HTuple(hv_Length2.TupleLess(iLength2 - hv_Length2Scale))).TupleOr(new HTuple(hv_Length2.TupleGreater(
-                //   iLength2 + hv_Length2Scale)))) != 0)
-                //{
-                #region
-                //    //HDevelopStop();
-                //    //HDevelopStop();
-                //    //NG绘制红色矩形
-                //    List<PointF> lnBarcodeNG2 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-
-                //    listObj2Draw.Add("多边形");
-                //    listObj2Draw.Add(lnBarcodeNG2.ToArray());
-                //    listObj2Draw.Add("NG");
-
-                //    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
-
-                //    //输出NG详情
-                //    lsInfo2Draw.Add("2标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
-                //    lsInfo2Draw.Add("OK");
-                //    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
-                //    lsInfo2Draw.Add("NG");
-                //    listObj2Draw.Add("字符串");
-                //    listObj2Draw.Add(lsInfo2Draw);
-                //    listObj2Draw.Add(new PointF(1800, 100));
-                //    return listObj2Draw;
-                #endregion
-                //}
-
-
-                //OK绘制蓝色矩形
-                List<PointF> lnBarcodeOK = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-
-                listObj2Draw.Add("多边形");
-                listObj2Draw.Add(lnBarcodeOK.ToArray());
-                listObj2Draw.Add("OK");
-
-                #region ---- *** 超时处理  *** ----
-
-                if (sw.ElapsedMilliseconds > iTimeout)
-                {
-                    sw.Stop();
-                    listObj2Draw[1] = "NG-超时";
-                    dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
-                    return listObj2Draw;
-                }
-                #endregion
-
-
-                HObject ho_Rectangle2, ho_RegionIntersection;
-                HTuple hv_Area4, hv_Row3, hv_Column3;
-
-                HOperatorSet.GenRectangle2(out ho_Rectangle2, hv_Row, hv_Column, hv_Phi, hv_Length1 * (120 / 214), hv_Length2);
-                //*检测挂锡
-                HObject ho_EdgeAmplitude, ho_Region1, ho_RegionClosing, ho_ImageReduced3;
-                HTuple hv_Area3, hv_Row2, hv_Column2;
-                HOperatorSet.ReduceDomain(ho_ImageReduced, ho_RectPu, out ho_ImageReduced3);
-                HOperatorSet.SobelAmp(ho_ImageReduced3, out ho_EdgeAmplitude, "sum_abs", 3);
-                HOperatorSet.Threshold(ho_EdgeAmplitude, out ho_Region1, 25, 255);
-                HOperatorSet.ClosingCircle(ho_Region1, out ho_RegionClosing, 7);
-                HOperatorSet.OpeningCircle(ho_RegionClosing, out ho_RegionOpening2, 8);
-                HOperatorSet.AreaCenter(ho_RegionOpening2, out hv_Area3, out hv_Row2, out hv_Column2);
-
-
-
-                HOperatorSet.Intersection(ho_RegionOpening2, ho_Rectangle2, out ho_RegionIntersection);
-                HOperatorSet.AreaCenter(ho_RegionIntersection, out hv_Area4, out hv_Row3, out hv_Column3);
-
-                //中间区域挂锡面积
-                if (hv_Area4 > iLouduArea2)
-                {
-                    #region
-                    listObj2Draw[1] = "NG-侧面挂锡";
-                    HOperatorSet.Connection(ho_RegionIntersection, out ho_RegionErrDConn);
-                    hv_Num = 0;
-                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
-                    //hv_Max2= hv_Area[0]
-                    for (int i = 1; i <= hv_Num; i++)
-                    {
-                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
-                    }
-                    //输出NG详情
-                    lsInfo2Draw.Add("缺陷最大面积：" + iLouduArea2.ToString() + " pix ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前面积：" + hv_Area4.ToString() + "pix");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion  
-                }
-
-                //焊锡总面积
-                if (hv_Area3 > iLouduArea1)
-                {
-                    #region
-                    listObj2Draw[1] = "NG-侧面挂锡";
-                    HOperatorSet.Connection(ho_RegionOpening2, out ho_RegionErrDConn);
-                    hv_Num = 0;
-                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
-                    //hv_Max2= hv_Area[0]
-                    for (int i = 1; i <= hv_Num; i++)
-                    {
-                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
-                    }
-                    //输出NG详情
-                    lsInfo2Draw.Add("缺陷最大面积：" + iLouduArea1.ToString() + " pix ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前面积：" + hv_Area3.ToString() + "pix");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-                    return listObj2Draw;
-                    #endregion  
-                }
-
-                //*检测内部缺陷
-                HTuple hv_Row4, hv_Column4, hv_Phi1, hv_Length11, hv_Length21, hv_Area5, hv_Row5, hv_Column5;
-                HObject ho_Rectangle1, ho_Rectangle3, ho_ConnectedDark, ho_SelectedRegions1;
-                HOperatorSet.SmallestRectangle2(ho_RegionOpening2, out hv_Row4, out hv_Column4,
-                    out hv_Phi1, out hv_Length11, out hv_Length21);
-                HOperatorSet.GenRectangle2(out ho_Rectangle1, hv_Row4, hv_Column4, hv_Phi1,
-                    hv_Length11, hv_Length21);
-                HOperatorSet.GenRectangle2(out ho_Rectangle3, hv_Row4, hv_Column4, hv_Phi1,
-                hv_Length11 * (2 / 3), hv_Length21 * (4 / 7));
-                //HOperatorSet.ErosionRectangle1(ho_Rectangle1, out ho_Rectangle3, 150, 80);
-
-
-                HOperatorSet.ReduceDomain(ho_ImageReduced, ho_Rectangle3, out ho_ImageReduced2);
-                HOperatorSet.Threshold(ho_ImageReduced2, out ho_RegionDark, 0, 80);
-                HOperatorSet.Connection(ho_RegionDark, out ho_ConnectedDark);
-                HOperatorSet.SelectShapeStd(ho_ConnectedDark, out ho_SelectedRegions1, "max_area", 70);
-                HOperatorSet.AreaCenter(ho_SelectedRegions1, out hv_Area5, out hv_Row5, out hv_Column5);
-
-                if (hv_Area5 > iErrArea)
-                {
-                    #region
-                    //HDevelopStop();
-                    listObj2Draw[1] = "NG-产品沾污";
-                    HOperatorSet.Connection(ho_SelectedRegions1, out ho_RegionErrDConn);
-                    hv_Num = 0;
-                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
-                    HOperatorSet.AreaCenter(ho_SelectedRegions1, out hv_Area, out hv_Row1, out hv_Column1);
-                    HOperatorSet.TupleMax(hv_Area, out hv_Max1);
-                    for (int i = 1; i <= hv_Num; i++)
-                    {
-                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
-                    }
-                    //输出NG详情
-                    lsInfo2Draw.Add("缺陷最大面积：" + iErrArea.ToString() + " pix ");
-                    lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前面积：" + hv_Area5.ToString() + "pix");
-                    lsInfo2Draw.Add("NG");
-                    listObj2Draw.Add("字符串");
-                    listObj2Draw.Add(lsInfo2Draw);
-                    listObj2Draw.Add(new PointF(1800, 100));
-
-                    return listObj2Draw;
-                    #endregion
-                }
-
-
-
-
-
-                #region ---- *** 超时处理  *** ----
-
-                if (sw.ElapsedMilliseconds > iTimeout)
-                {
-                    sw.Stop();
-                    listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时114," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
-                    return listObj2Draw;
-                }
-                #endregion
-
-                listObj2Draw[1] = "OK";
-                return listObj2Draw;
-            }
-
-            catch (Exception exc)
-            {
-                listObj2Draw[1] = "NG-程序出错";
-                dhDll.frmMsg.Log("sySixSideDetect12", "", exc, dhDll.logDiskMode.Error, 0);
-                return listObj2Draw;
-            }
-            finally
-            {
-                sw.Stop();
-                if (bUseMutex) muDetect12.ReleaseMutex();
-            }
-            #endregion
-
-        }
-
-
-
+        #region 0402R
         //12相机 六面机左右面  引用文件 6
         public static List<object> sySixSideDetect_0402R_Camera12(HObject hoImage, List<PointF[]> lkkPolygon, string strParams)
         {
@@ -1038,10 +579,472 @@ namespace SiyarSixsDetect
 
 
 
+
+        //34相机 六面机前后面  引用文件 7
+        public static List<object> sySixSideDetect_0402R_Camera34(HObject hoImage, List<PointF[]> lkkPolygon, string strParams)
+        {
+
+            #region  *** 34相机 六面机前后面 ***
+            if (bUseMutex) muDetect12.WaitOne();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            List<object> listObj2Draw = new List<object>();
+            //添加元素
+            listObj2Draw.Add(0); listObj2Draw.Add("OK"); listObj2Draw.Add(888);
+            try
+            {
+                HObject hoRegion, hoReduced, hoConcate, hoUnion;
+                HObject hoEmphasize, ho_BlackReg, ho_DarkPix;
+                HObject ho_RegionSelect, ho_RegionDiff, ho_ImageMean;
+                HObject ho_RegionOpen, ho_RegionConnect, ho_SortedRegion, ho_RegionFill, ho_ImageMaxReduce, ho_RegionConn, ho_RegionSelect1, ho_ImageReduce, ho_ImageClosing, ho_Rectangle, ho_RectangleEro;
+                HObject ho_RegionLight, ho_RegionLights, ho_BiggestRegion, ho_RegionEro, ho_ImageCheck, EdgeAmplitude, ho_Err_RegionConn, ho_RegionSel;
+
+                HTuple hv_Area, hv_Col, hv_Phi, hv_Length1, hv_Length2, hv_Row1, hv_Col1, Areapppp, Rowpppp, Colpppp;
+                HTuple hv_MaxIndex, hv_cmp, hv_I, hv_AreaSelect, hv_Row, hv_Column, Areakkk, Rowkkk, Colkkk, hv_Num;
+                HTuple hv_Column1, hv_Max1, hv_Max2, hv_area;
+
+                //***判断电阻是否靠近边界
+                HTuple hv_Area7, hv_Row10, hv_Column10;
+                HObject ho_RegionDifference2, ho_RegionErosion3, ho_RegionIntersection8;
+
+
+                List<string> lsInfo2Draw = new List<string>();
+
+                #region ****** 生成区域ROI  ******
+
+                HOperatorSet.GenEmptyObj(out hoConcate);
+                for (int igg = 0; igg < lkkPolygon.Count; igg++)
+                {
+                    if (lkkPolygon[igg][0].X == 3)
+                    {
+                        PointF pgg1 = lkkPolygon[igg][1];
+                        PointF pgg2 = lkkPolygon[igg][2];//圆形ROI的直径
+                        double ddistance = Math.Sqrt(Math.Pow(pgg2.X - pgg1.X, 2) + Math.Pow(pgg2.Y - pgg1.Y, 2));
+
+                        HOperatorSet.GenCircle(out hoRegion, pgg1.Y, pgg1.X, ddistance);
+                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
+                    }
+                    else if (lkkPolygon[igg][0].X == 8)
+                    {
+                        PointF pgg1 = lkkPolygon[igg][1];
+                        PointF pgg2 = lkkPolygon[igg][2];//矩形的宽度 高度
+
+                        HOperatorSet.GenRectangle1(out hoRegion, pgg1.Y, pgg1.X, pgg1.Y + pgg2.Y, pgg1.X + pgg2.X);
+                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
+                    }
+                    else
+                    {
+                        PointF pgg1 = lkkPolygon[igg][1];
+                        PointF pgg2 = lkkPolygon[igg][3];//rectangle2的宽度 高度
+
+                        HOperatorSet.GenRectangle2(out hoRegion, pgg1.Y, pgg1.X, lkkPolygon[igg][2].X / 10000, pgg2.X, pgg2.Y);
+                        HOperatorSet.ConcatObj(hoConcate, hoRegion, out hoConcate);
+                    }
+                }
+
+                HOperatorSet.Union1(hoConcate, out hoUnion);
+                HOperatorSet.ReduceDomain(hoImage, hoUnion, out hoReduced);
+
+
+                #endregion
+
+                string[] strUserParam = strParams.Split('#');
+                //3,4相机参数
+                int iLength1 = int.Parse(strUserParam[4]);      //iLength1  = 145    半长
+                int iLength1Scale = int.Parse(strUserParam[5]); //iLength1Scale = 15 半长变化值
+                int iLength2 = int.Parse(strUserParam[6]);      //iLength2  = 45     半宽
+                int iLength2Scale = int.Parse(strUserParam[7]); //iLength2Scale = 15 半宽变化值
+                int iErrThres = int.Parse(strUserParam[8]);     //iErrThres  = 40    缺陷阈值40
+                int iErrArea = int.Parse(strUserParam[9]);      //iErrArea = 50      缺陷面积500
+                int iLouduArea1 = int.Parse(strUserParam[10]);    //iLouduArea1=15000     侧面挂锡区域面积15000
+                int iclosing_rext = int.Parse(strUserParam[11]);//iclosing_rext=1(未启用) 初始掩模尺寸
+                int iLouduArea2 = int.Parse(strUserParam[12]);    //iLouduArea2=1500    侧面挂锡区域面积1500
+                int AreaDuanmian = int.Parse(strUserParam[13]);    //iLouduArea2=1500    侧面挂锡区域面积1500
+                int iScale = int.Parse(strUserParam[14]);    //scale_image参数
+
+
+
+
+                HObject ho_RegionErrDConn, ho_RegionErrD, ho_ConnectedRegionDark, ho_RegionDark, ho_ImageReduced2, ho_RegionErosion, ho_RegionOpening2, ho_RectPu, ho_RegionOpening, ho_Image1, ho_ImageReduced, ho_Image3, ho_RegionBinary, ho_ConnectedRegions, ho_MaxRegion, ho_RegionFillUp;
+                HTuple hv_Number, NChannel, hv_UsedThreshold;
+
+                //判断彩色还是黑白
+                HOperatorSet.CountChannels(hoReduced, out NChannel);
+                if (NChannel == 3) //三通道彩色
+                {
+                    HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
+                }
+                else  //单通道黑白
+                {
+                    HOperatorSet.CopyObj(hoReduced, out ho_ImageReduced, 1, 1);  //hoReduced 复制到 ho_ImageReduced
+                }
+
+                #region ---- *** 超时处理  *** ----
+
+                if (sw.ElapsedMilliseconds > iTimeout)
+                {
+                    sw.Stop();
+                    listObj2Draw[1] = "NG-超时";
+                    dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
+                    return listObj2Draw;
+                }
+                #endregion
+
+
+
+
+                HOperatorSet.ScaleImage(ho_ImageReduced, out ho_ImageClosing, 3, -iScale);
+
+                //HOperatorSet.GrayClosingRect(ho_ImageReduced, out ho_ImageClosing, iclosing_rext, iclosing_rext);//11,11
+                HOperatorSet.BinaryThreshold(ho_ImageClosing, out ho_RegionBinary, "max_separability",
+                    "light", out hv_UsedThreshold);
+                HOperatorSet.Connection(ho_RegionBinary, out ho_ConnectedRegions);
+                HOperatorSet.SelectShapeStd(ho_ConnectedRegions, out ho_MaxRegion, "max_area", 70);
+                HOperatorSet.AreaCenter(ho_MaxRegion, out Areakkk, out Rowkkk, out Colkkk);
+
+
+                if (Areakkk < 0.5 * AreaDuanmian)  //****如果端面面积小于设置的最小端面面积的一半，判定无定位
+                {
+                    #region***粗定位面积不符合要求,判定无定位
+                    listObj2Draw[1] = "NG-无定位"; //区域面积不符合要求
+                                                //输出NG详情
+                    HOperatorSet.CountObj(ho_MaxRegion, out hv_Num);
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_MaxRegion, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+
+                    lsInfo2Draw.Add("无定位-端面最小面积：" + (0.5 * AreaDuanmian).ToString() + "pix * ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前尺寸：" + Areakkk.D.ToString("0.0") + " pix * ");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+
+                if (Areakkk < AreaDuanmian)  //****粗定位面积54830
+                {
+                    #region***粗定位面积不符合要求,判定无定位
+                    listObj2Draw[1] = "NG-尺寸不符"; //区域面积不符合要求
+                                                 //输出NG详情
+                    HOperatorSet.CountObj(ho_MaxRegion, out hv_Num);
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_MaxRegion, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+
+                    lsInfo2Draw.Add("端面最小面积：" + AreaDuanmian.ToString() + "pix * ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前尺寸：" + Areakkk.D.ToString("0.0") + " pix * ");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+
+
+
+                HOperatorSet.FillUp(ho_MaxRegion, out ho_RegionFillUp);
+                HOperatorSet.OpeningRectangle1(ho_RegionFillUp, out ho_RegionOpening, 5, 5);
+                HOperatorSet.SmallestRectangle2(ho_RegionOpening, out hv_Row, out hv_Column,
+                    out hv_Phi, out hv_Length1, out hv_Length2);
+                HOperatorSet.GenRectangle2(out ho_RectPu, hv_Row, hv_Column, hv_Phi, hv_Length1,
+                    hv_Length2);
+
+                #region***判断电阻是否靠近边界                   
+                //HOperatorSet.ErosionCircle(ho_ImageReduced, out ho_RegionErosion3, 1.1);
+                //HOperatorSet.Intersection(ho_RegionErosion3, ho_RectPu, out ho_RegionIntersection8);
+                //HOperatorSet.Difference(ho_RectPu, ho_RegionIntersection8, out ho_RegionDifference2);
+                //HOperatorSet.AreaCenter(ho_RegionDifference2, out hv_Area7, out hv_Row10, out hv_Column10);
+                //if ((int)(new HTuple(hv_Area7.TupleGreater(0))) != 0)
+                //{
+                //    #region
+                //    listObj2Draw[1] = "NG-无定位";//角度歪斜
+                //    List<PointF> lnBarcode = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+                //    listObj2Draw.Add("多边形");
+                //    listObj2Draw.Add(lnBarcode.ToArray());
+                //    listObj2Draw.Add("NG");
+
+                //    //输出NG详情
+                //    lsInfo2Draw.Add("靠近边界");
+                //    lsInfo2Draw.Add("NG");
+                //    listObj2Draw.Add("字符串");
+                //    listObj2Draw.Add(lsInfo2Draw);
+                //    listObj2Draw.Add(new PointF(1800, 100));
+                //    return listObj2Draw;
+                //    #endregion
+                //}
+                #endregion
+
+                //*判断产品尺寸（145 * 45）
+                HTuple hv_Length1Scale = iLength1Scale;
+                HTuple hv_Length2Scale = iLength2Scale;
+
+                if ((int)((new HTuple(hv_Length1.TupleLess(iLength1 - hv_Length1Scale))).TupleOr(new HTuple(hv_Length1.TupleGreater(
+                    iLength1 + hv_Length1Scale)))) != 0)
+                {
+                    #region
+                    //HDevelopStop();
+                    //NG绘制红色矩形
+                    List<PointF> lnBarcodeNG1 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+
+                    listObj2Draw.Add("多边形");
+                    listObj2Draw.Add(lnBarcodeNG1.ToArray());
+                    listObj2Draw.Add("NG");
+
+                    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
+
+                    //输出NG详情
+                    lsInfo2Draw.Add("1标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+                if ((int)((new HTuple(hv_Length2.TupleLess(iLength2 - hv_Length2Scale))).TupleOr(new HTuple(hv_Length2.TupleGreater(
+                    iLength2 + hv_Length2Scale)))) != 0)
+                {
+                    #region                
+                    //NG绘制红色矩形
+                    List<PointF> lnBarcodeNG2 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+
+                    listObj2Draw.Add("多边形");
+                    listObj2Draw.Add(lnBarcodeNG2.ToArray());
+                    listObj2Draw.Add("NG");
+
+                    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
+
+                    //输出NG详情
+                    lsInfo2Draw.Add("1标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+                //if ((int)((new HTuple(hv_Length2.TupleLess(iLength2 - hv_Length2Scale))).TupleOr(new HTuple(hv_Length2.TupleGreater(
+                //   iLength2 + hv_Length2Scale)))) != 0)
+                //{
+                #region
+                //    //HDevelopStop();
+                //    //HDevelopStop();
+                //    //NG绘制红色矩形
+                //    List<PointF> lnBarcodeNG2 = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+
+                //    listObj2Draw.Add("多边形");
+                //    listObj2Draw.Add(lnBarcodeNG2.ToArray());
+                //    listObj2Draw.Add("NG");
+
+                //    listObj2Draw[1] = "NG-尺寸不符";  //0508更改 NG-尺寸不符
+
+                //    //输出NG详情
+                //    lsInfo2Draw.Add("2标准尺寸：" + iLength1.ToString() + "pix * " + iLength2.ToString() + "pix ");
+                //    lsInfo2Draw.Add("OK");
+                //    lsInfo2Draw.Add("当前尺寸：" + hv_Length1.D.ToString("0.0") + " pix * " + hv_Length2.D.ToString("0.0") + " pix");
+                //    lsInfo2Draw.Add("NG");
+                //    listObj2Draw.Add("字符串");
+                //    listObj2Draw.Add(lsInfo2Draw);
+                //    listObj2Draw.Add(new PointF(1800, 100));
+                //    return listObj2Draw;
+                #endregion
+                //}
+
+
+                //OK绘制蓝色矩形
+                List<PointF> lnBarcodeOK = dhFindVerticesOfRectangle2(hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+
+                listObj2Draw.Add("多边形");
+                listObj2Draw.Add(lnBarcodeOK.ToArray());
+                listObj2Draw.Add("OK");
+
+                #region ---- *** 超时处理  *** ----
+
+                if (sw.ElapsedMilliseconds > iTimeout)
+                {
+                    sw.Stop();
+                    listObj2Draw[1] = "NG-超时";
+                    dhDll.frmMsg.Log("超时111," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
+                    return listObj2Draw;
+                }
+                #endregion
+
+
+                HObject ho_Rectangle2, ho_RegionIntersection;
+                HTuple hv_Area4, hv_Row3, hv_Column3;
+
+                HOperatorSet.GenRectangle2(out ho_Rectangle2, hv_Row, hv_Column, hv_Phi, hv_Length1 * (120 / 214), hv_Length2);
+                //*检测挂锡
+                HObject ho_EdgeAmplitude, ho_Region1, ho_RegionClosing, ho_ImageReduced3;
+                HTuple hv_Area3, hv_Row2, hv_Column2;
+                HOperatorSet.ReduceDomain(ho_ImageReduced, ho_RectPu, out ho_ImageReduced3);
+                HOperatorSet.SobelAmp(ho_ImageReduced3, out ho_EdgeAmplitude, "sum_abs", 3);
+                HOperatorSet.Threshold(ho_EdgeAmplitude, out ho_Region1, 25, 255);
+                HOperatorSet.ClosingCircle(ho_Region1, out ho_RegionClosing, 7);
+                HOperatorSet.OpeningCircle(ho_RegionClosing, out ho_RegionOpening2, 8);
+                HOperatorSet.AreaCenter(ho_RegionOpening2, out hv_Area3, out hv_Row2, out hv_Column2);
+
+
+
+                HOperatorSet.Intersection(ho_RegionOpening2, ho_Rectangle2, out ho_RegionIntersection);
+                HOperatorSet.AreaCenter(ho_RegionIntersection, out hv_Area4, out hv_Row3, out hv_Column3);
+
+                //中间区域挂锡面积
+                if (hv_Area4 > iLouduArea2)
+                {
+                    #region
+                    listObj2Draw[1] = "NG-侧面挂锡";
+                    HOperatorSet.Connection(ho_RegionIntersection, out ho_RegionErrDConn);
+                    hv_Num = 0;
+                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
+                    //hv_Max2= hv_Area[0]
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+                    //输出NG详情
+                    lsInfo2Draw.Add("缺陷最大面积：" + iLouduArea2.ToString() + " pix ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前面积：" + hv_Area4.ToString() + "pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion  
+                }
+
+                //焊锡总面积
+                if (hv_Area3 > iLouduArea1)
+                {
+                    #region
+                    listObj2Draw[1] = "NG-侧面挂锡";
+                    HOperatorSet.Connection(ho_RegionOpening2, out ho_RegionErrDConn);
+                    hv_Num = 0;
+                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
+                    //hv_Max2= hv_Area[0]
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+                    //输出NG详情
+                    lsInfo2Draw.Add("缺陷最大面积：" + iLouduArea1.ToString() + " pix ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前面积：" + hv_Area3.ToString() + "pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion  
+                }
+
+                //*检测内部缺陷
+                HTuple hv_Row4, hv_Column4, hv_Phi1, hv_Length11, hv_Length21, hv_Area5, hv_Row5, hv_Column5;
+                HObject ho_Rectangle1, ho_Rectangle3, ho_ConnectedDark, ho_SelectedRegions1;
+                HOperatorSet.SmallestRectangle2(ho_RegionOpening2, out hv_Row4, out hv_Column4,
+                    out hv_Phi1, out hv_Length11, out hv_Length21);
+                HOperatorSet.GenRectangle2(out ho_Rectangle1, hv_Row4, hv_Column4, hv_Phi1,
+                    hv_Length11, hv_Length21);
+                HOperatorSet.GenRectangle2(out ho_Rectangle3, hv_Row4, hv_Column4, hv_Phi1,
+                hv_Length11 * (2 / 3), hv_Length21 * (4 / 7));
+                //HOperatorSet.ErosionRectangle1(ho_Rectangle1, out ho_Rectangle3, 150, 80);
+
+
+                HOperatorSet.ReduceDomain(ho_ImageReduced, ho_Rectangle3, out ho_ImageReduced2);
+                HOperatorSet.Threshold(ho_ImageReduced2, out ho_RegionDark, 0, 80);
+                HOperatorSet.Connection(ho_RegionDark, out ho_ConnectedDark);
+                HOperatorSet.SelectShapeStd(ho_ConnectedDark, out ho_SelectedRegions1, "max_area", 70);
+                HOperatorSet.AreaCenter(ho_SelectedRegions1, out hv_Area5, out hv_Row5, out hv_Column5);
+
+                if (hv_Area5 > iErrArea)
+                {
+                    #region
+                    //HDevelopStop();
+                    listObj2Draw[1] = "NG-产品沾污";
+                    HOperatorSet.Connection(ho_SelectedRegions1, out ho_RegionErrDConn);
+                    hv_Num = 0;
+                    HOperatorSet.CountObj(ho_RegionErrDConn, out hv_Num);
+                    HOperatorSet.AreaCenter(ho_SelectedRegions1, out hv_Area, out hv_Row1, out hv_Column1);
+                    HOperatorSet.TupleMax(hv_Area, out hv_Max1);
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_RegionErrDConn, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+                    //输出NG详情
+                    lsInfo2Draw.Add("缺陷最大面积：" + iErrArea.ToString() + " pix ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前面积：" + hv_Area5.ToString() + "pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+
+                    return listObj2Draw;
+                    #endregion
+                }
+
+
+
+
+
+                #region ---- *** 超时处理  *** ----
+
+                if (sw.ElapsedMilliseconds > iTimeout)
+                {
+                    sw.Stop();
+                    listObj2Draw[1] = "NG-超时"; dhDll.frmMsg.Log("超时114," + sw.ElapsedMilliseconds.ToString(), "", null, dhDll.logDiskMode.Error, 0, true);
+                    return listObj2Draw;
+                }
+                #endregion
+
+                listObj2Draw[1] = "OK";
+                return listObj2Draw;
+            }
+
+            catch (Exception exc)
+            {
+                listObj2Draw[1] = "NG-程序出错";
+                dhDll.frmMsg.Log("sySixSideDetect12", "", exc, dhDll.logDiskMode.Error, 0);
+                return listObj2Draw;
+            }
+            finally
+            {
+                sw.Stop();
+                if (bUseMutex) muDetect12.ReleaseMutex();
+            }
+            #endregion
+
+        }
+
+
+
+      
+
         //56相机 六面机 正反面 引用文件 8
         private static long Number111 = 0;
-        private static long Number555 = 0;
-        private static long Number666 = 0;
+        private static long Number555 = 0;//用于保存图片时排序
+        private static long Number666 = 0;//用于保存图片时排序
 
         public static List<object> sySixSideDetect_0402R_Camera56(HObject hoImage, List<PointF[]> lkkPolygon, string strParams)
         {
@@ -3799,76 +3802,7 @@ namespace SiyarSixsDetect
             #endregion
         }
 
-        //创建字码模板
-        public static void CreateModelMK(HObject ho_Image, out HObject ho_ModelRegion, out HTuple hv_ModelID, out HTuple hv_ModelParam, out HTuple hv_ERR)
-        {
-
-            HObject ho_ImageMean = null;
-            HObject ho_ExpImage, ho_ImageScaleMax, ho_RegionDynThresh;
-            HTuple hv_Row111 = new HTuple(), hv_Column111 = new HTuple();
-            HTuple hv_Angle111 = new HTuple(), hv_Score111 = new HTuple();
-            HTuple hv_Exception = null;
-            // Initialize local and output iconic variables 
-            HOperatorSet.GenEmptyObj(out ho_ModelRegion);
-            HOperatorSet.GenEmptyObj(out ho_ImageMean);
-            hv_ModelID = new HTuple();
-            hv_ModelParam = new HTuple();
-            hv_ERR = new HTuple();
-            try
-            {
-                try
-                {
-
-                    HOperatorSet.CreateShapeModel(ho_Image, "auto", (new HTuple(-180)).TupleRad()
-                        , (new HTuple(180)).TupleRad(), "auto", "auto", "use_polarity", "auto",
-                        "auto", out hv_ModelID);
-
-                    HOperatorSet.ExpImage(ho_Image, out ho_ExpImage, 7);
-                    HOperatorSet.ScaleImageMax(ho_ExpImage, out ho_ImageScaleMax);
-                    HOperatorSet.Threshold(ho_ImageScaleMax, out ho_ModelRegion, 128, 255);
-
-
-
-                    //HOperatorSet.MeanImage(ho_Image, out ho_ImageMean, 40, 40);
-                    //HOperatorSet.DynThreshold(ho_Image, ho_ImageMean, out ho_ModelRegion, 10,
-                    //    "light");
-
-                    HObject ho_ConnectedRegions1, ho_SelectedRegions1;
-                    HOperatorSet.Connection(ho_ModelRegion, out ho_ConnectedRegions1);
-
-                    HOperatorSet.SelectShape(ho_ConnectedRegions1, out ho_SelectedRegions1, "area",
-                        "and", 100, 99999);
-
-                    HOperatorSet.Union1(ho_SelectedRegions1, out ho_ModelRegion);
-
-
-
-                    HOperatorSet.FindShapeModel(ho_Image, hv_ModelID, -((new HTuple(10)).TupleRad()
-                        ), (new HTuple(20)).TupleRad(), 0.3, 1, 0, "least_squares", 0, 0.9,
-                        out hv_Row111, out hv_Column111, out hv_Angle111, out hv_Score111);
-                    hv_ModelParam = new HTuple();
-                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Row111);
-                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Column111);
-                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Angle111);
-                    hv_ERR = 0;
-
-                }
-                catch (hvppleException HDevExpDefaultException1)
-                {
-                    HDevExpDefaultException1.ToHTuple(out hv_Exception);
-                    hv_ERR = 1;
-                }
-
-
-                return;
-            }
-            catch (hvppleException HDevExpDefaultException)
-            {
-                ho_ImageMean.Dispose();
-                throw HDevExpDefaultException;
-            }
-        }
-
+      
 
 
         //字码检测，引用文件 8
@@ -3878,9 +3812,11 @@ namespace SiyarSixsDetect
             return lnBarcode;
         }
 
+        #endregion
 
 
-        //六面机0603电阻 12 相机算法 引用文件11
+        #region  0603R
+        //六面机0603电阻 12 相机算法 引用文件13
         public static List<object> sySixSideDetect_0603R_Camera12(HObject hoImage, List<PointF[]> lkkPolygon, string strParams, ref string strMessage)
         {
 
@@ -3909,7 +3845,8 @@ namespace SiyarSixsDetect
                 HTuple NChannel;
                 HObject ho_RectPu;
                 // ***新声明
-                HObject ho_GrayImage;
+                HObject ho_GrayImage;              
+
                 #endregion
 
                 List<string> lsInfo2Draw = new List<string>();
@@ -3967,6 +3904,9 @@ namespace SiyarSixsDetect
                 //初始化调试输出内容
                 string strDebug = "";
                 #endregion
+
+
+
 
 
                 #region  //12相机参数(接收界面传递的参数)
@@ -4397,7 +4337,7 @@ namespace SiyarSixsDetect
         }
 
 
-        //六面机0603 34 相机 算法  引用文件12      
+        //六面机0603 34 相机 算法  引用文件14     
         public static List<object> sySixSideDetect_0603R_Camera34(HObject hoImage, List<PointF[]> lkkPolygon, string strParams, ref string strMessage)
         {
 
@@ -4508,8 +4448,7 @@ namespace SiyarSixsDetect
 
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
-
-
+              
 
                 #endregion
 
@@ -4869,9 +4808,7 @@ namespace SiyarSixsDetect
             #region  *** 0603 带字码检测  ***
 
             #region  *** 56相机 六面机上下面  ***
-           int hv_ipix22 = 1;
-            dhDll.frmMsg.Log("背导ok" + "00000000" + "," + hv_ipix22.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-
+         
             //dhDll.clsFunction.writeTxtFile("D:\\1111.txt", System.IO.FileMode.Create, new List<string>(strUserParam));
 
             if (bUseMutex) muDetect8.WaitOne();
@@ -5257,8 +5194,7 @@ namespace SiyarSixsDetect
 
 
 
-                dhDll.frmMsg.Log("背导ok" + "11111" + "," + hv_ipix.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-
+               
 
                 #region ---- *** 无定位 *** ----
                 wudingwei(ho_GrayImage, out ho_Region_cudingwei, out ho_Rectangle1_wudingwei,
@@ -5373,8 +5309,7 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #endregion
-                dhDll.frmMsg.Log("背导ok" + "2222" + "," + hv_ipix.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-
+             
 
                 HOperatorSet.CountObj(ho_Region_cudingwei, out hv_Num);
                 HTuple hv_SaveImageNum = hv_Num;
@@ -7124,7 +7059,77 @@ namespace SiyarSixsDetect
 
 
 
+        //创建字码模板
+        public static void CreateModelMK(HObject ho_Image, out HObject ho_ModelRegion, out HTuple hv_ModelID, out HTuple hv_ModelParam, out HTuple hv_ERR)
+        {
 
+            HObject ho_ImageMean = null;
+            HObject ho_ExpImage, ho_ImageScaleMax, ho_RegionDynThresh;
+            HTuple hv_Row111 = new HTuple(), hv_Column111 = new HTuple();
+            HTuple hv_Angle111 = new HTuple(), hv_Score111 = new HTuple();
+            HTuple hv_Exception = null;
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_ModelRegion);
+            HOperatorSet.GenEmptyObj(out ho_ImageMean);
+            hv_ModelID = new HTuple();
+            hv_ModelParam = new HTuple();
+            hv_ERR = new HTuple();
+            try
+            {
+                try
+                {
+
+                    HOperatorSet.CreateShapeModel(ho_Image, "auto", (new HTuple(-180)).TupleRad()
+                        , (new HTuple(180)).TupleRad(), "auto", "auto", "use_polarity", "auto",
+                        "auto", out hv_ModelID);
+
+                    HOperatorSet.ExpImage(ho_Image, out ho_ExpImage, 7);
+                    HOperatorSet.ScaleImageMax(ho_ExpImage, out ho_ImageScaleMax);
+                    HOperatorSet.Threshold(ho_ImageScaleMax, out ho_ModelRegion, 128, 255);
+
+
+
+                    //HOperatorSet.MeanImage(ho_Image, out ho_ImageMean, 40, 40);
+                    //HOperatorSet.DynThreshold(ho_Image, ho_ImageMean, out ho_ModelRegion, 10,
+                    //    "light");
+
+                    HObject ho_ConnectedRegions1, ho_SelectedRegions1;
+                    HOperatorSet.Connection(ho_ModelRegion, out ho_ConnectedRegions1);
+
+                    HOperatorSet.SelectShape(ho_ConnectedRegions1, out ho_SelectedRegions1, "area",
+                        "and", 100, 99999);
+
+                    HOperatorSet.Union1(ho_SelectedRegions1, out ho_ModelRegion);
+
+
+
+                    HOperatorSet.FindShapeModel(ho_Image, hv_ModelID, -((new HTuple(10)).TupleRad()
+                        ), (new HTuple(20)).TupleRad(), 0.3, 1, 0, "least_squares", 0, 0.9,
+                        out hv_Row111, out hv_Column111, out hv_Angle111, out hv_Score111);
+                    hv_ModelParam = new HTuple();
+                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Row111);
+                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Column111);
+                    hv_ModelParam = hv_ModelParam.TupleConcat(hv_Angle111);
+                    hv_ERR = 0;
+
+                }
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_Exception);
+                    hv_ERR = 1;
+                }
+
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_ImageMean.Dispose();
+                throw HDevExpDefaultException;
+            }
+        }
+
+        #endregion
 
 
 
