@@ -3596,9 +3596,9 @@ namespace SiyarSixsDetect
 
                 //参数34 ：瓷体缺陷掩膜大小 
 
-                string[] strUserParamMask = strUserParam[69].Split('+');
-                int iZSMaskWidth = int.Parse(strUserParamMask[0]);
-                int iZSMaskHeight = int.Parse(strUserParamMask[1]);
+                //string[] strUserParamMask = strUserParam[69].Split('+');
+                int iZSMaskWidth = int.Parse(strUserParam[69]);
+                int iZSMaskHeight = 25;
 
                 //int iZSMask = int.Parse(strUserParam[69]);
 
@@ -3645,7 +3645,7 @@ namespace SiyarSixsDetect
                 //参数42 ：棱边定位矩形半宽 25
                 int iLBStructLength2 = int.Parse(strUserParam[79]);
                 //参数43 ：棱边瓷损检测梯度大小 7
-                int iLBSobelSize = int.Parse(strUserParam[80]);
+                int iLBSobelSize  = int.Parse(strUserParam[80]);
                 //参数44 ：棱边瓷损检测梯度阈值 R:10 B:15
                 int iLBSobelThres = int.Parse(strUserParam[81]);
 
@@ -3689,7 +3689,7 @@ namespace SiyarSixsDetect
 
 
 
-                bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
+                bool iCheckSelAll = true;   //是否全检还是依赖于外部选择
                 //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
                 int A_产品尺寸 = iCheckSelAll ? 1 : int.Parse(strUserParam[94]); //产品尺寸
                 int A_电极尺寸 = iCheckSelAll ? 1 : int.Parse(strUserParam[95]); //电极尺寸
@@ -3706,10 +3706,10 @@ namespace SiyarSixsDetect
 
                 //判断是否调试输出
                 bool is_Debug;
-                if (strMessage == "1")
-                    is_Debug = true;
-                else
+                if (strMessage == "0")
                     is_Debug = false;
+                else
+                    is_Debug = true;
                 //初始化调试输出内容
                 string strDebug = "";
 
@@ -5419,7 +5419,7 @@ namespace SiyarSixsDetect
 
 
 
-                bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
+                bool iCheckSelAll = true;   //是否全检还是依赖于外部选择
                 //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
                 int A_封端前瓷损 = iCheckSelAll ? 1 : int.Parse(strUserParam[94]); //封端前瓷损
                 int A_封端刮伤 = iCheckSelAll ? 1 : int.Parse(strUserParam[95]); //封端刮伤
@@ -5428,14 +5428,14 @@ namespace SiyarSixsDetect
 
 
 
-
+                  
 
                 //判断是否调试输出
                 bool is_Debug;
-                if (strMessage == "1")
-                    is_Debug = true;
-                else
+                if (strMessage == "0")
                     is_Debug = false;
+                else
+                    is_Debug = true;
                 //初始化调试输出内容
                 string strDebug = "";
 
@@ -5497,9 +5497,12 @@ namespace SiyarSixsDetect
                     strDebug += "总定位闭运算:" + iMainClosing.ToString() + "\n";
                     strDebug += "电极过滤面积:" + iMainFilterArea.ToString() + "\n";
 
-                    HTuple Rowtmp, Coltmp, Areatmp;
-                    HOperatorSet.AreaCenter(ho_SelectedRegions, out Areatmp, out Rowtmp, out Coltmp);
-                    strDebug += "当前识别电极面积:" + Areatmp.TupleSelect(0).D.ToString("0.0") + "\n";
+                    if (hv_Number != 0)
+                    {
+                        HTuple Rowtmp, Coltmp, Areatmp;
+                        HOperatorSet.AreaCenter(ho_SelectedRegions, out Areatmp, out Rowtmp, out Coltmp);
+                        strDebug += "当前识别电极面积:" + Areatmp.TupleSelect(0).D.ToString("0.0") + "\n";
+                    }
 
                     strDebug += "当前识别电极个数:" + hv_Number.D.ToString() + "\n";
                     strDebug += "\n";
@@ -5513,11 +5516,16 @@ namespace SiyarSixsDetect
                     //绘制电极轮廓  ho_RegionFillUp1
                     hv_Num = 0;
                     HOperatorSet.CountObj(ho_SelectedRegions, out hv_Num);
-                    for (int i = 1; i <= hv_Num; i++)
+
+                    if (hv_Number != 0)
                     {
-                        HOperatorSet.SelectObj(ho_SelectedRegions, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                        for (int i = 1; i <= hv_Num; i++)
+                        {
+                            HOperatorSet.SelectObj(ho_SelectedRegions, out ho_RegionSel, i);
+                            syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                        }
                     }
+
 
                     //向硬盘写入NG图片
                     if (iCameraCode == 1)
@@ -5556,7 +5564,9 @@ namespace SiyarSixsDetect
                     syShowRegionBorder(ho_SelectedRegions, ref listObj2Draw, "NG");
 
                     //输出NG详情
-                    lsInfo2Draw.Add("矩形度:" + hv_Rectangularity.D.ToString("0.0"));
+                    lsInfo2Draw.Add("设定最小矩形度:" + HRectyThres.D.ToString("0.000"));
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前矩形度:" + hv_Rectangularity.D.ToString("0.000"));
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
