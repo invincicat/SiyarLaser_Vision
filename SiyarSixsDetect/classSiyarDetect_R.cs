@@ -3945,6 +3945,12 @@ namespace SiyarSixsDetect
 
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
+
+                bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
+                                             //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
+                int A_端头崩碎 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_端头崩碎
+
+
                 #endregion
 
 
@@ -4246,10 +4252,11 @@ namespace SiyarSixsDetect
 
                 #region 缺陷显示（Detect_Err_12）
 
-
+               
                 HOperatorSet.CountObj(ho_Region_Err2, out hv_Num);
                 HOperatorSet.Union1(ho_Region_Err2, out hoUnion);
                 HOperatorSet.AreaCenter(hoUnion, out hv_Area1, out hv_Row2, out hv_Column2);
+                if (A_端头崩碎 == 0) goto A_端头崩碎END;
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(4))) != 0)
                 {
                     #region
@@ -4271,6 +4278,7 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                     #endregion
                 }
+                A_端头崩碎END:
                 #endregion
 
 
@@ -4449,7 +4457,12 @@ namespace SiyarSixsDetect
 
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
-              
+
+
+
+                bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
+                                             //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
+                int A_产品沾污 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_上爬不足
 
                 #endregion
 
@@ -4718,7 +4731,12 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+
                 #region 缺陷显示(Detect_Err_34)
+
+
+                if (A_产品沾污 == 0) goto A_产品沾污END;
+
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
                 {
                     #region                    
@@ -4748,7 +4766,7 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                     #endregion
                 }
-
+                A_产品沾污END:
                 #endregion
 
                 //调试模式   
@@ -4922,6 +4940,11 @@ namespace SiyarSixsDetect
                 int iSmallestArea_beidianji = int.Parse(strUserParam[30]); //背电极最小面积
                 int iBiggstArea_beidianji = int.Parse(strUserParam[31]);   //背电极最大面积
 
+                float Length2DDD_zhengmian_Std = float.Parse(strUserParam[32]); //正面左右电极比值
+                float Length2DDD_beimian_Std = float.Parse(strUserParam[33]);   //背面左右电极比值
+
+                
+
 
                 float Rectangularity1 = float.Parse(strUserParam[36]);//背面电极矩形度判定
                 Rectangularity1 = Rectangularity1 / 100;
@@ -5014,7 +5037,7 @@ namespace SiyarSixsDetect
 
                 //其它参数
                 int iProductCode = int.Parse(strUserParam[94]);  //产品类别(5-五号工位，6-六号工位)：
-                int iSaveImg = int.Parse(strUserParam[95]);//是否保存5、6相机的OK图片（1-保存图片，其他不保存图片）
+                int iSaveImg = int.Parse(strUserParam[95]);//是否保存5、6相机的OK图片（1-保存jpeg图片，2-保存bmp图片，其他不保存图片）
                 float ipix = float.Parse(strUserParam[96]);  //像素距离到实际距离的转换系数
                 ipix = ipix / 1000000;
 
@@ -5026,9 +5049,7 @@ namespace SiyarSixsDetect
                  */
 
                 bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
-                //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
-              
-
+               //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）               
 
                 int A_上爬不足 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_上爬不足
 
@@ -5053,23 +5074,7 @@ namespace SiyarSixsDetect
                
                 int A_瓷体挂锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);   //A_瓷体挂锡
                 int A_瓷体脏片 = iCheckSelAll ? 1 : int.Parse(strUserParam[119]); //A_瓷体脏片     
-                                                                              //int A_背面延锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);     //A_背面延锡                                                
-
-
-
-                HTuple Length2DDD_Max, Length2DDD_Min, Length2DDD_X, Length2DDD_X_Std;
-                Length2DDD_X_Std = 2.5;
-
-
-
-                #region 2020-04-14  将参数写入文档
-                //如果文件不存在，则创建；存在则覆盖
-                //该方法写入字符数组换行显示           
-                //System.IO.File.WriteAllLines(@"C:\testDir\test.txt", strUserParam, Encoding.UTF8);
-                #endregion
-
-
-                #endregion
+                //int A_背面延锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);     //A_背面延锡                                                
 
 
                 #region 调试模式初始化
@@ -5087,6 +5092,250 @@ namespace SiyarSixsDetect
                 string strDebug = "";
 
                 #endregion
+
+
+               
+
+
+                #region 缺陷检测选项
+                int XXXYYYZZZ;
+                strDebug += "缺陷检测选项:\n";
+                #region
+                XXXYYYZZZ = A_上爬不足;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_上爬不足" + ":" + "不检测" + "\n";
+                }
+               
+                else
+                {
+                    strDebug += "A_上爬不足 "+  ":" + "检测" + "\n";
+                }
+                #endregion
+
+                #region
+                 XXXYYYZZZ = A_字码个数;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_字码个数" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_字码个数" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_字码匹配失败;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_字码匹配失败" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_字码匹配失败" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_标记断线;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_标记断线" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_标记断线" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_标记不清;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_标记不清" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_标记不清" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_上爬不足;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_上爬不足" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_上爬不足" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+                #region
+                 XXXYYYZZZ = A_保护层崩碎;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_保护层崩碎" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_保护层崩碎" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_保护层沾锡;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_保护层沾锡" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_保护层沾锡" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_漏镀;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_漏镀" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_漏镀" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+                #region
+                 XXXYYYZZZ = A_电阻正面整体角度判定和长宽判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_电阻正面整体角度判定和长宽判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_电阻正面整体角度判定和长宽判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_正面电极面积判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_正面电极面积判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_正面电极面积判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                 XXXYYYZZZ = A_正面电极长宽判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_正面电极长宽判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_正面电极长宽判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+              
+
+                #region
+                XXXYYYZZZ = A_电阻背面整体角度判定和长宽判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_电阻背面整体角度判定和长宽判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_电阻背面整体角度判定和长宽判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                XXXYYYZZZ = A_背面电极面积判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_背面电极面积判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_背面电极面积判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                XXXYYYZZZ = A_背面电极长宽判定;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_背面电极长宽判定" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_背面电极长宽判定" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+                #region
+                XXXYYYZZZ = A_瓷体挂锡;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_瓷体挂锡" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_瓷体挂锡" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region
+                XXXYYYZZZ = A_瓷体脏片;
+                if (XXXYYYZZZ == 0)
+                {
+                    strDebug += "A_瓷体脏片" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_瓷体脏片" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+
+                strMessage = DebugPrint(strDebug, is_Debug);
+
+                #endregion
+
+
+                HTuple Length2DDD_Max, Length2DDD_Min, Length2DDD_X, Length2DDD_X_Std;
+
+
+
+
+
+
+                #region 2020-04-14  将参数写入文档
+                //如果文件不存在，则创建；存在则覆盖
+                //该方法写入字符数组换行显示           
+                //System.IO.File.WriteAllLines(@"C:\testDir\test.txt", strUserParam, Encoding.UTF8);
+                #endregion
+
+
+                #endregion
+
+
+
 
                 #region****保存所有图片，不区分正反面
 
@@ -5141,7 +5390,31 @@ namespace SiyarSixsDetect
                     }                                       
                     #endregion  
                 }
-                
+
+                #endregion
+
+                #region  调试模式-保存图片选项
+                if (is_Debug)
+                {
+                    strDebug += "检测程序内部保存图片选项：";
+                    if (iSaveImg == 1)
+                    {
+                        strDebug += "保存Jpeg格式";
+                    }
+                    else if (iSaveImg == 2)
+                    {
+                        strDebug += "保存Bmp格式";
+                    }
+                    else
+                    {
+                        strDebug += "不保存";
+                    }
+
+                    strMessage = DebugPrint(strDebug, is_Debug);
+                    //HOperatorSet.Connection(ho_RegionDetection, out hoRegionsConn);
+                    //syShowRegionBorder(hoRegionsConn, ref listObj2Draw, "OK");
+                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                }
                 #endregion
 
 
@@ -5255,6 +5528,26 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                 }
                 #endregion
+
+                //if (is_Debug)
+                //{
+                //    strDebug += "(1)总定位相关参数:" + "\n";
+                //    strDebug += "总定位阈值:" + iMainThres.ToString() + "\n";
+                //    strDebug += "总定位开运算:" + iMainOpening.ToString() + "\n";
+                //    strDebug += "总定位闭运算:" + iMainClosing.ToString() + "\n";
+                //    strDebug += "电极过滤面积:" + iMainFilterArea.ToString() + "\n";
+
+                //    if (hv_Number != 0)
+                //    {
+                //        HTuple Rowtmp, Coltmp, Areatmp;
+                //        HOperatorSet.AreaCenter(ho_SelectedRegions, out Areatmp, out Rowtmp, out Coltmp);
+                //        strDebug += "当前识别电极面积:" + Areatmp.TupleSelect(0).D.ToString("0.0") + "\n";
+                //    }
+
+                //    strDebug += "当前识别电极个数:" + hv_Number.D.ToString() + "\n";
+                //    strDebug += "\n";
+                //}
+
 
 
 
@@ -5390,21 +5683,7 @@ namespace SiyarSixsDetect
                 {
                     #region---- *** 背导朝上 *** ----
 
-                    #region 调试模式
-                    if (is_Debug)
-                    {
-                        //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
-                        //dhDll.frmMsg.Log("背导ok" + "77777777" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                    }
-
-                    if (is_Debug)
-                    {
-                        strDebug += "整体尺寸参数";
-                    }
-
-
-                    strMessage = DebugPrint(strDebug, is_Debug);
-                    #endregion
+                   
 
 
                     #region ---- *** 背导朝上-尺寸不符检测 *** ----               
@@ -5614,7 +5893,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.TupleMin(Length2DDD, out Length2DDD_Min);
                     Length2DDD_X = Length2DDD_Max / Length2DDD_Min;
 
-                    if (Length2DDD_X > Length2DDD_X_Std)
+                    if (Length2DDD_X > Length2DDD_beimian_Std)
                     {
                         #region***两电极宽度比值
                         listObj2Draw[1] = "NG-电极不符"; //"NG-电极异常"
@@ -5626,7 +5905,7 @@ namespace SiyarSixsDetect
                             syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
                         }
                         //输出NG详情
-                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_X_Std);
+                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_beimian_Std);
                         lsInfo2Draw.Add("OK");
                         lsInfo2Draw.Add("当前比值：" + Length2DDD_X);
                         lsInfo2Draw.Add("NG");
@@ -5637,10 +5916,10 @@ namespace SiyarSixsDetect
                         #endregion
                     }
 
+                  
 
 
-
-                    A_背面电极长宽判定END:
+                A_背面电极长宽判定END:
                     #endregion
 
 
@@ -5963,6 +6242,39 @@ namespace SiyarSixsDetect
                     A_背面电极长宽Rect判定END:
 
                     #endregion
+
+
+                    #region 调试模式
+                   
+
+                    if (is_Debug)
+                    {
+                        strDebug += "尺寸参数: \n";
+                        
+                            
+                        strDebug += "背面参数\n";
+                        strDebug += "背面-电极数量:" + bElectrodeNum.ToString() + "\n";
+                  
+                        strDebug += "背面-整体长度:" + bWholeLength.ToString() + "\n";
+                        strDebug += "背面-整体宽度:" + bWholeWidth.ToString() + "\n";
+
+                        strDebug += "背面-瓷体长度:" + bCeramicsLength.ToString() + "\n";
+                        strDebug += "背面-瓷体宽度:" + bCeramicsWidth.ToString() + "\n";
+
+                        strDebug += "背面电极-左电极长度:" + bLeftElectrodeLength.ToString() + "\n";
+                        strDebug += "背面电极-左电极宽度:" + iLeftElectrodeWidth.ToString() + "\n";
+                       
+                        strDebug += "背面电极-右电极长度:" + bRightElectrodeLength.ToString() + "\n";
+                        strDebug += "背面电极-右电极宽度:" + bRightElectrodeLength.ToString() + "\n";
+
+                       
+
+                    }
+
+
+                    strMessage = DebugPrint(strDebug, is_Debug);
+                    #endregion
+
 
 
                     #endregion
@@ -6689,7 +7001,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.TupleMin(Length2DDD, out Length2DDD_Min);
                     Length2DDD_X = Length2DDD_Max / Length2DDD_Min;
 
-                    if (  Length2DDD_X > Length2DDD_X_Std)
+                    if (  Length2DDD_X > Length2DDD_zhengmian_Std)
                     {
                         #region***两电极宽度比值
                         listObj2Draw[1] = "NG-电极不符"; //"NG-电极异常"
@@ -6701,7 +7013,7 @@ namespace SiyarSixsDetect
                             syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
                         }
                         //输出NG详情
-                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_X_Std );
+                        lsInfo2Draw.Add("左右电极宽度比值：" + Length2DDD_zhengmian_Std);
                         lsInfo2Draw.Add("OK");
                         lsInfo2Draw.Add("当前比值：" + Length2DDD_X);
                         lsInfo2Draw.Add("NG");
@@ -6712,10 +7024,10 @@ namespace SiyarSixsDetect
                         #endregion
                     }
 
+                 
 
 
-
-                    A_正面电极长宽判定END:
+                A_正面电极长宽判定END:
 
 
                     #endregion
