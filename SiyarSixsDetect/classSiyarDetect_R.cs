@@ -3842,6 +3842,11 @@ namespace SiyarSixsDetect
                 HObject ho_Region_Duanmian;
                 HObject ho_Region_Err2;
 
+                HObject ho_Region_loudu;
+                //缺陷显示
+                HObject ho_Region_Display, ho_Union_Dispay, ho_Region_Sel;
+                HTuple hv_Num_Display, hv_Area_Display, hv_Row_Display, hv_Column_Display;
+               
                 //ceshi01-主要检测部分
                 HTuple NChannel;
                 HObject ho_RectPu;
@@ -3942,16 +3947,90 @@ namespace SiyarSixsDetect
                 float iEroCir2 = float.Parse(strUserParam[25]) / 10;      //长宽比10
                 int iThr2 = int.Parse(strUserParam[26]);      //长宽比10
 
+                int hv_iloudu_thr = int.Parse(strUserParam[27]);//漏镀缺陷阈值（80）
+                int hv_iloudu_area = int.Parse(strUserParam[28]);//漏镀缺陷面积（100）
+                float hv_iloudu_erosion = float.Parse(strUserParam[29]);//漏镀缺陷检测范围（10）
+
 
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
 
+
+               
+
+
+
                 bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
                                              //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
-                int A_端头崩碎 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_端头崩碎
+                int A_端头崩碎 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_端头崩碎               
+                int A_漏镀 = iCheckSelAll ? 1 : int.Parse(strUserParam[105]); //A_漏镀
+                #endregion
+
+                #region 参数传递
+                hv_parameter = new HTuple();
+                hv_parameter = hv_parameter.TupleConcat(hv_iThr1);
+                hv_parameter = hv_parameter.TupleConcat(hv_iThr2);
+                hv_parameter = hv_parameter.TupleConcat(hv_iMaskWith);
+                hv_parameter = hv_parameter.TupleConcat(hv_iDyn_Thr);
+
+                hv_parameter = hv_parameter.TupleConcat(hv_iScaleMult);
+                hv_parameter = hv_parameter.TupleConcat(hv_iScaleAdd);
+                hv_parameter = hv_parameter.TupleConcat(hv_iErrAll);
+                hv_parameter = hv_parameter.TupleConcat(hv_iOpening_Circle);
+
+                hv_parameter = hv_parameter.TupleConcat(hv_Area_Duanmian);
+                hv_parameter = hv_parameter.TupleConcat(hv_iAngleScale);
+                hv_parameter = hv_parameter.TupleConcat(hv_iRecty);
+                hv_parameter = hv_parameter.TupleConcat(hv_iErrArea2);
+
+                hv_parameter = hv_parameter.TupleConcat(iSobelSize);
+                hv_parameter = hv_parameter.TupleConcat(iThr1);
+                hv_parameter = hv_parameter.TupleConcat(iClosCir);
+                hv_parameter = hv_parameter.TupleConcat(iEroCir1);
+
+                hv_parameter = hv_parameter.TupleConcat(iEroCir2);
+                hv_parameter = hv_parameter.TupleConcat(iThr2);
+
+                hv_parameter = hv_parameter.TupleConcat(hv_iloudu_thr);
+                hv_parameter = hv_parameter.TupleConcat(hv_iloudu_area);
+                hv_parameter = hv_parameter.TupleConcat(hv_iloudu_erosion);
 
 
                 #endregion
+
+                #region  调试模式初始化
+
+                int ErrorIsOn = 0;
+                #region  A_端头崩碎
+                ErrorIsOn = A_端头崩碎;
+                if (ErrorIsOn == 0)
+                {
+                    strDebug += "A_端头崩碎" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_端头崩碎" + ":" + "检测" + "\n";
+                }
+                #endregion
+                #region A_漏镀12
+                ErrorIsOn = A_漏镀;
+                if (ErrorIsOn == 0)
+                {
+                    strDebug += "A_漏镀" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_漏镀" + ":" + "检测" + "\n";
+                }
+                #endregion
+
+                strMessage = DebugPrint(strDebug, is_Debug);
+                #endregion
+              
+
+
 
 
                 #region****保存所有图片，不区分正反面
@@ -4034,31 +4113,7 @@ namespace SiyarSixsDetect
                 #endregion
 
 
-                #region 参数传递
-                hv_parameter = new HTuple();
-                hv_parameter = hv_parameter.TupleConcat(hv_iThr1);
-                hv_parameter = hv_parameter.TupleConcat(hv_iThr2);
-                hv_parameter = hv_parameter.TupleConcat(hv_iMaskWith);
-                hv_parameter = hv_parameter.TupleConcat(hv_iDyn_Thr);
-
-                hv_parameter = hv_parameter.TupleConcat(hv_iScaleMult);
-                hv_parameter = hv_parameter.TupleConcat(hv_iScaleAdd);
-                hv_parameter = hv_parameter.TupleConcat(hv_iErrAll);
-                hv_parameter = hv_parameter.TupleConcat(hv_iOpening_Circle);
-
-                hv_parameter = hv_parameter.TupleConcat(hv_Area_Duanmian);
-                hv_parameter = hv_parameter.TupleConcat(hv_iAngleScale);
-                hv_parameter = hv_parameter.TupleConcat(hv_iRecty);
-                hv_parameter = hv_parameter.TupleConcat(hv_iErrArea2);
-
-                hv_parameter = hv_parameter.TupleConcat(iSobelSize);
-                hv_parameter = hv_parameter.TupleConcat(iThr1);
-                hv_parameter = hv_parameter.TupleConcat(iClosCir);
-                hv_parameter = hv_parameter.TupleConcat(iEroCir1);
-
-                hv_parameter = hv_parameter.TupleConcat(iEroCir2);
-                hv_parameter = hv_parameter.TupleConcat(iThr2);
-                #endregion
+             
 
 
                 duanmian_dingwei(ho_GrayImage, out ho_Region_Duanmian, hv_parameter, out hv_NGCode);
@@ -4238,6 +4293,10 @@ namespace SiyarSixsDetect
                 #endregion
 
 
+
+
+
+
                 //端面缺陷检测
                 Detect_Err_12(ho_GrayImage, ho_Region_Duanmian, out ho_Region_Err2, hv_parameter, out hv_NGCode);
 
@@ -4250,27 +4309,50 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+                #region  调试模式
+
+                if (is_Debug)  //调试状态输出信息
+                {
+                    //图像显示
+                    //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
+                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                    //strDebug += "(2)漏镀缺陷检测相关参数：\n";
+                    //strDebug += "漏镀缺陷阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    //strDebug += "漏镀缺陷面积:" + hv_iloudu_area.ToString() + "\n";
+                    //strDebug += "漏镀缺陷检测范围:" + hv_iloudu_erosion.ToString() + "\n";
+
+
+
+
+                }
+
+                strDebug += "\n";
+                strMessage = DebugPrint(strDebug, is_Debug);
+                #endregion
+
                 #region 缺陷显示（Detect_Err_12）
 
-               
-                HOperatorSet.CountObj(ho_Region_Err2, out hv_Num);
-                HOperatorSet.Union1(ho_Region_Err2, out hoUnion);
-                HOperatorSet.AreaCenter(hoUnion, out hv_Area1, out hv_Row2, out hv_Column2);
+
+                ho_Region_Display = ho_Region_Err2;//可修改
+                HOperatorSet.CountObj(ho_Region_Display, out hv_Num_Display);
+                HOperatorSet.Union1(ho_Region_Display, out ho_Union_Dispay);
+                HOperatorSet.AreaCenter(ho_Union_Dispay, out hv_Area_Display, out hv_Row_Display, out hv_Column_Display);
                 if (A_端头崩碎 == 0) goto A_端头崩碎END;
-                if ((int)(new HTuple(hv_NGCode.TupleEqual(4))) != 0)
+                if ((int)(new HTuple(hv_NGCode.TupleEqual(4))) != 0)//可修改
                 {
                     #region
-                    listObj2Draw[1] = "NG-端头崩碎";
-                    for (int i = 1; i <= hv_Num; i++)
+                    listObj2Draw[1] = "NG-端头崩碎";//可修改
+                    for (int i = 1; i <= hv_Num_Display; i++)
                     {
-                        HOperatorSet.SelectObj(ho_Region_Err2, out ho_RegionSel, i);
-                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                        HOperatorSet.SelectObj(ho_Region_Display, out ho_Region_Sel, i);
+                        syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
                     }
 
                     //输出NG详情
-                    lsInfo2Draw.Add("5555缺陷最大面积：" + hv_iErrArea2.ToString() + " pix ");
+                    lsInfo2Draw.Add("端头缺陷最大面积：" + hv_iErrArea2.ToString() + " pix ");//可修改
                     lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前面积：" + hv_Area1.D.ToString("0.0") + "pix");
+                    lsInfo2Draw.Add("当前面积：" + hv_Area_Display.D.ToString("0.0") + "pix");
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
@@ -4278,34 +4360,80 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
                     #endregion
                 }
-                A_端头崩碎END:
+            A_端头崩碎END:
                 #endregion
 
 
-                #region  调试模式
-                if (is_Debug)
-                {
-                    syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
-                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                }
 
-                if (is_Debug)
-                {
-                    strDebug += "整体尺寸参数";
-                }
-
-
-                strMessage = DebugPrint(strDebug, is_Debug);
-                #endregion
+                //漏镀检测
+                Detect_loudu_12(hoReduced, ho_Region_Duanmian, out ho_Region_loudu, hv_parameter, out hv_NGCode);
 
                 #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
                     listObj2Draw[1] = "NG-程序出错";
-                    dhDll.frmMsg.Log("背导ok" + "程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+                    dhDll.frmMsg.Log("程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
                     return listObj2Draw;
                 }
                 #endregion
+
+                #region  调试模式
+                
+                if (is_Debug)  //调试状态输出信息
+                {
+                    //图像显示
+                    syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
+                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                    strDebug += "(2)漏镀缺陷检测相关参数：\n";
+                    strDebug += "漏镀缺陷阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    strDebug += "漏镀缺陷面积:" + hv_iloudu_area.ToString() + "\n";
+                    strDebug += "漏镀缺陷检测范围:" + hv_iloudu_erosion.ToString() + "\n";
+
+                   
+
+                   
+                }
+
+                strDebug += "\n";
+                strMessage = DebugPrint(strDebug, is_Debug);
+                #endregion
+
+                #region 缺陷显示（Detect_loudu_12）
+
+
+                ho_Region_Display = ho_Region_loudu;//可修改
+                HOperatorSet.CountObj(ho_Region_Display, out hv_Num_Display);
+                HOperatorSet.Union1(ho_Region_Display, out ho_Union_Dispay);
+                HOperatorSet.AreaCenter(ho_Union_Dispay, out hv_Area_Display, out hv_Row_Display, out hv_Column_Display);
+                if (A_漏镀 == 0) goto A_漏镀END;
+                if ((int)(new HTuple(hv_NGCode.TupleEqual(40))) != 0)//可修改
+                {
+                    #region
+                    listObj2Draw[1] = "NG-漏镀";
+                    for (int i = 1; i <= hv_Num_Display; i++)
+                    {
+                        HOperatorSet.SelectObj(ho_Region_Display, out ho_Region_Sel, i);
+                        syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
+                    }
+
+                    //输出NG详情
+                    lsInfo2Draw.Add("漏镀缺陷最大面积：" + hv_iloudu_area.ToString() + " pix ");//可修改
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前面积：" + hv_Area_Display.D.ToString("0.0") + "pix");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+            A_漏镀END:
+                #endregion
+
+
+
+          
 
 
 
@@ -5098,11 +5226,11 @@ namespace SiyarSixsDetect
 
 
                 #region 缺陷检测选项
-                int XXXYYYZZZ;
+                int ErrorIsOn;
                 strDebug += "缺陷检测选项:\n";
                 #region
-                XXXYYYZZZ = A_上爬不足;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_上爬不足;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_上爬不足" + ":" + "不检测" + "\n";
                 }
@@ -5114,8 +5242,8 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #region
-                 XXXYYYZZZ = A_字码个数;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_字码个数;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_字码个数" + ":" + "不检测" + "\n";
                 }
@@ -5126,8 +5254,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_字码匹配失败;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_字码匹配失败;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_字码匹配失败" + ":" + "不检测" + "\n";
                 }
@@ -5138,8 +5266,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_标记断线;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_标记断线;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_标记断线" + ":" + "不检测" + "\n";
                 }
@@ -5150,8 +5278,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_标记不清;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_标记不清;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_标记不清" + ":" + "不检测" + "\n";
                 }
@@ -5162,8 +5290,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_上爬不足;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_上爬不足;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_上爬不足" + ":" + "不检测" + "\n";
                 }
@@ -5175,8 +5303,8 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #region
-                 XXXYYYZZZ = A_保护层崩碎;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_保护层崩碎;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_保护层崩碎" + ":" + "不检测" + "\n";
                 }
@@ -5187,8 +5315,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_保护层沾锡;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_保护层沾锡;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_保护层沾锡" + ":" + "不检测" + "\n";
                 }
@@ -5199,8 +5327,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_漏镀;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_漏镀;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_漏镀" + ":" + "不检测" + "\n";
                 }
@@ -5212,8 +5340,8 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #region
-                 XXXYYYZZZ = A_电阻正面整体角度判定和长宽判定;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_电阻正面整体角度判定和长宽判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_电阻正面整体角度判定和长宽判定" + ":" + "不检测" + "\n";
                 }
@@ -5224,8 +5352,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_正面电极面积判定;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_正面电极面积判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_正面电极面积判定" + ":" + "不检测" + "\n";
                 }
@@ -5236,8 +5364,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                 XXXYYYZZZ = A_正面电极长宽判定;
-                if (XXXYYYZZZ == 0)
+                 ErrorIsOn = A_正面电极长宽判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_正面电极长宽判定" + ":" + "不检测" + "\n";
                 }
@@ -5251,8 +5379,8 @@ namespace SiyarSixsDetect
               
 
                 #region
-                XXXYYYZZZ = A_电阻背面整体角度判定和长宽判定;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_电阻背面整体角度判定和长宽判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_电阻背面整体角度判定和长宽判定" + ":" + "不检测" + "\n";
                 }
@@ -5263,8 +5391,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                XXXYYYZZZ = A_背面电极面积判定;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_背面电极面积判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_背面电极面积判定" + ":" + "不检测" + "\n";
                 }
@@ -5275,8 +5403,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                XXXYYYZZZ = A_背面电极长宽判定;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_背面电极长宽判定;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_背面电极长宽判定" + ":" + "不检测" + "\n";
                 }
@@ -5288,8 +5416,8 @@ namespace SiyarSixsDetect
                 #endregion
 
                 #region
-                XXXYYYZZZ = A_瓷体挂锡;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_瓷体挂锡;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_瓷体挂锡" + ":" + "不检测" + "\n";
                 }
@@ -5300,8 +5428,8 @@ namespace SiyarSixsDetect
                 }
                 #endregion
                 #region
-                XXXYYYZZZ = A_瓷体脏片;
-                if (XXXYYYZZZ == 0)
+                ErrorIsOn = A_瓷体脏片;
+                if (ErrorIsOn == 0)
                 {
                     strDebug += "A_瓷体脏片" + ":" + "不检测" + "\n";
                 }
@@ -6244,36 +6372,36 @@ namespace SiyarSixsDetect
                     #endregion
 
 
-                    #region 调试模式
+                    //#region 调试模式
                    
 
-                    if (is_Debug)
-                    {
-                        strDebug += "尺寸参数: \n";
+                    //if (is_Debug)
+                    //{
+                    //    strDebug += "尺寸参数: \n";
                         
                             
-                        strDebug += "背面参数\n";
-                        strDebug += "背面-电极数量:" + bElectrodeNum.ToString() + "\n";
+                    //    strDebug += "背面参数\n";
+                    //    strDebug += "背面-电极数量:" + bElectrodeNum.ToString() + "\n";
                   
-                        strDebug += "背面-整体长度:" + bWholeLength.ToString() + "\n";
-                        strDebug += "背面-整体宽度:" + bWholeWidth.ToString() + "\n";
+                    //    strDebug += "背面-整体长度:" + bWholeLength.ToString() + "\n";
+                    //    strDebug += "背面-整体宽度:" + bWholeWidth.ToString() + "\n";
 
-                        strDebug += "背面-瓷体长度:" + bCeramicsLength.ToString() + "\n";
-                        strDebug += "背面-瓷体宽度:" + bCeramicsWidth.ToString() + "\n";
+                    //    strDebug += "背面-瓷体长度:" + bCeramicsLength.ToString() + "\n";
+                    //    strDebug += "背面-瓷体宽度:" + bCeramicsWidth.ToString() + "\n";
 
-                        strDebug += "背面电极-左电极长度:" + bLeftElectrodeLength.ToString() + "\n";
-                        strDebug += "背面电极-左电极宽度:" + iLeftElectrodeWidth.ToString() + "\n";
+                    //    strDebug += "背面电极-左电极长度:" + bLeftElectrodeLength.ToString() + "\n";
+                    //    strDebug += "背面电极-左电极宽度:" + iLeftElectrodeWidth.ToString() + "\n";
                        
-                        strDebug += "背面电极-右电极长度:" + bRightElectrodeLength.ToString() + "\n";
-                        strDebug += "背面电极-右电极宽度:" + bRightElectrodeLength.ToString() + "\n";
+                    //    strDebug += "背面电极-右电极长度:" + bRightElectrodeLength.ToString() + "\n";
+                    //    strDebug += "背面电极-右电极宽度:" + bRightElectrodeLength.ToString() + "\n";
 
                        
 
-                    }
+                    //}
 
 
-                    strMessage = DebugPrint(strDebug, is_Debug);
-                    #endregion
+                    //strMessage = DebugPrint(strDebug, is_Debug);
+                    //#endregion
 
 
 
@@ -7561,6 +7689,157 @@ namespace SiyarSixsDetect
             else
                 return "0";
         }
+
+
+        public static void Detect_loudu_12(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_loudu,
+      HTuple hv_parameter, out HTuple hv_NGCode)
+        {
+
+
+
+
+            // Local iconic variables 
+
+            HObject ho_Image_R = null, ho_Image_G = null, ho_Image_B = null;
+            HObject ho_Duanmian_Erosion1 = null, ho_Reduced_loudu = null;
+            HObject ho_ConnectedRegions = null, ho_SelectedRegions_loudu = null;
+
+            // Local control variables 
+
+            HTuple hv_iloudu_thr = new HTuple(), hv_iloudu_area = new HTuple();
+            HTuple hv_iloudu_erosion = new HTuple(), hv_Number_loudu = new HTuple();
+            HTuple hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_Region_loudu);
+            HOperatorSet.GenEmptyObj(out ho_Image_R);
+            HOperatorSet.GenEmptyObj(out ho_Image_G);
+            HOperatorSet.GenEmptyObj(out ho_Image_B);
+            HOperatorSet.GenEmptyObj(out ho_Duanmian_Erosion1);
+            HOperatorSet.GenEmptyObj(out ho_Reduced_loudu);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions_loudu);
+            hv_NGCode = new HTuple();
+            try
+            {
+
+                try
+                {
+
+                    //**漏镀检测
+                    hv_iloudu_thr.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_thr = hv_parameter.TupleSelect(
+                            18);
+                    }
+                    hv_iloudu_area.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_area = hv_parameter.TupleSelect(
+                            19);
+                    }
+                    hv_iloudu_erosion.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_erosion = hv_parameter.TupleSelect(
+                            20);
+                    }
+
+                    //***端面漏镀检测
+                    ho_Image_R.Dispose(); ho_Image_G.Dispose(); ho_Image_B.Dispose();
+                    HOperatorSet.Decompose3(ho_Image, out ho_Image_R, out ho_Image_G, out ho_Image_B
+                        );
+                    //intensity (Region_Duanmian, Image_R, Mean, Deviation)
+
+                    ho_Duanmian_Erosion1.Dispose();
+                    HOperatorSet.ErosionRectangle1(ho_Region_Duanmian, out ho_Duanmian_Erosion1,
+                        hv_iloudu_erosion, hv_iloudu_erosion);
+                    ho_Reduced_loudu.Dispose();
+                    HOperatorSet.ReduceDomain(ho_Image_R, ho_Duanmian_Erosion1, out ho_Reduced_loudu
+                        );
+                    ho_Region_loudu.Dispose();
+                    HOperatorSet.Threshold(ho_Reduced_loudu, out ho_Region_loudu, 0, hv_iloudu_thr);
+                    ho_ConnectedRegions.Dispose();
+                    HOperatorSet.Connection(ho_Region_loudu, out ho_ConnectedRegions);
+                    ho_SelectedRegions_loudu.Dispose();
+                    HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions_loudu,
+                        "area", "and", hv_iloudu_area, 99999);
+                    ho_Region_loudu.Dispose();
+                    ho_Region_loudu = new HObject(ho_SelectedRegions_loudu);
+                    hv_Number_loudu.Dispose();
+                    HOperatorSet.CountObj(ho_SelectedRegions_loudu, out hv_Number_loudu);
+
+                    if ((int)(new HTuple(hv_Number_loudu.TupleGreater(0))) != 0)
+                    {
+                        hv_NGCode.Dispose();
+                        hv_NGCode = 40;
+                        ho_Image_R.Dispose();
+                        ho_Image_G.Dispose();
+                        ho_Image_B.Dispose();
+                        ho_Duanmian_Erosion1.Dispose();
+                        ho_Reduced_loudu.Dispose();
+                        ho_ConnectedRegions.Dispose();
+                        ho_SelectedRegions_loudu.Dispose();
+
+                        hv_iloudu_thr.Dispose();
+                        hv_iloudu_area.Dispose();
+                        hv_iloudu_erosion.Dispose();
+                        hv_Number_loudu.Dispose();
+                        hv_exc.Dispose();
+
+                        return;
+                    }
+
+
+
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+
+                ho_Image_R.Dispose();
+                ho_Image_G.Dispose();
+                ho_Image_B.Dispose();
+                ho_Duanmian_Erosion1.Dispose();
+                ho_Reduced_loudu.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions_loudu.Dispose();
+
+                hv_iloudu_thr.Dispose();
+                hv_iloudu_area.Dispose();
+                hv_iloudu_erosion.Dispose();
+                hv_Number_loudu.Dispose();
+                hv_exc.Dispose();
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_Image_R.Dispose();
+                ho_Image_G.Dispose();
+                ho_Image_B.Dispose();
+                ho_Duanmian_Erosion1.Dispose();
+                ho_Reduced_loudu.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions_loudu.Dispose();
+
+                hv_iloudu_thr.Dispose();
+                hv_iloudu_area.Dispose();
+                hv_iloudu_erosion.Dispose();
+                hv_Number_loudu.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
+
+
+
 
         public static void loudu_2(HObject ho_Image, HObject ho_Region_dianji, HObject ho_Region_citi,
       HTuple hv_Parameter_LD, out HTuple hv_NGCode, out HTuple hv_loudu_Mean, out HTuple hv_loudu_div)
