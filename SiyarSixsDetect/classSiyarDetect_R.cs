@@ -4589,10 +4589,14 @@ namespace SiyarSixsDetect
                 #region  //34相机参数(接收界面传递的参数)
                 string[] strUserParam = strParams.Split('#');
                 //3,4相机参数             
-                int iLength1 = int.Parse(strUserParam[4]);      //iLength1  = 145    半长
-                int iLength1Scale = int.Parse(strUserParam[5]); //iLength1Scale = 15 半长变化值
-                int iLength2 = int.Parse(strUserParam[6]);      //iLength2  = 45     半宽
-                int iLength2Scale = int.Parse(strUserParam[7]); //iLength2Scale = 15 半宽变化值
+                int hv_iLeft_Length1_Min = int.Parse(strUserParam[4]);      //iLength1  = 145    半长
+                int hv_iLeft_Length1_Max = int.Parse(strUserParam[5]); //iLength1Scale = 15 半长变化值
+                int hv_iLeft_Length2_Min = int.Parse(strUserParam[6]);      //iLength2  = 45     半宽
+                int hv_iLeft_Length2_Max = int.Parse(strUserParam[7]); //iLength2Scale = 15 半宽变化值
+
+                //HTuple hv_iLeft_Length1_Min, hv_iLeft_Length1_Max, hv_iLeft_Length2_Min, hv_iLeft_Length2_Max;
+
+
 
                 int hv_iThr_Cudingwei = int.Parse(strUserParam[8]);     //粗定位阈值
                 int hv_AreaDuanmian = int.Parse(strUserParam[9]);      //侧面预期面积
@@ -4614,11 +4618,11 @@ namespace SiyarSixsDetect
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
 
-
+                double ipix = 0.001;//像素距离到实际距离的转换系数
 
                 bool iCheckSelAll = false;   //是否全检还是依赖于外部选择
                                              //用户检测项可选项 strUserParam[94]开始  , 0：屏蔽 1：启用 ， 默认 1（打钩）
-                int A_产品沾污 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_上爬不足
+                int A_产品沾污 = iCheckSelAll ? 1 : int.Parse(strUserParam[104]); //A_产品沾污
 
                 #endregion
 
@@ -4743,9 +4747,6 @@ namespace SiyarSixsDetect
 
 
 
-
-
-
                 #region 参数传递
                 hv_parameter = new HTuple();
                 hv_parameter = hv_parameter.TupleConcat(hv_iThr_Cudingwei);
@@ -4779,9 +4780,12 @@ namespace SiyarSixsDetect
                 HOperatorSet.SmallestRectangle2(ho_Region_cemian, out hv_Row, out hv_Column,
                        out hv_Phi, out hv_Length1, out hv_Length2);
 
-                hv_Length1_Cemian = hv_Length1 * 2;
-                hv_Length2_Cemian = hv_Length2 * 2;
+                hv_Length1_Cemian = hv_Length1 * 2 * ipix * 1000; //像素长度转换为实际距离
+                hv_Length2_Cemian = hv_Length2 * 2 * ipix * 1000; //像素长度转换为实际距离
 
+
+                //*判断产品尺寸（）            
+   
                 #region 调试模式
                 if (is_Debug)
                 {                   
@@ -4789,9 +4793,8 @@ namespace SiyarSixsDetect
                     HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
                     syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
 
-
-                    strDebug += "（1）侧面定位相关参数：\n";
-                    //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    //参数显示
+                    strDebug += "（1）侧面定位相关参数：\n";                
                     strDebug += "侧面长度:" + hv_Length1_Cemian.D.ToString("0.0") + "pix" + "\n";
                     strDebug += "侧面宽度:" + hv_Length2_Cemian.D.ToString("0.0") + "pix" + "\n";
 
@@ -4836,11 +4839,79 @@ namespace SiyarSixsDetect
 
 
 
-              
+
 
 
                 #region ***侧面尺寸
-                //*判断产品尺寸（）            
+                //*判断产品尺寸（）   
+
+                #region ****电极长度测量
+
+                hv_Length1_Cemian = hv_Length1 * 2 * ipix * 1000; //像素长度转换为实际距离
+                hv_Length2_Cemian = hv_Length2 * 2 * ipix * 1000; //像素长度转换为实际距离
+
+             
+
+
+               
+                    if ((int)(new HTuple((new HTuple(hv_iLeft_Length1_Min.TupleLess(hv_Length1_Cemian.TupleSelect(0)))).TupleLess(hv_iLeft_Length1_Max))) != 0)
+                    {
+                    #region  ****电极长度波动幅度-电极长度过小
+                    //if ((Length1DDD.TupleSelect(0) < Iwave2 * Ilenth2) || (Length1DDD.TupleSelect(1) < Iwave2 * Ilenth2)) //电极长边不能小于0.75 *85
+                    //if ((int)(new HTuple(((((Length1DDD.TupleSelect(0) - Ilenth2)).TupleAbs())).TupleGreater(Ilenth2 * Iwave2))) != 0 || (int)(new HTuple(((((Length1DDD.TupleSelect(1) - Ilenth2)).TupleAbs())).TupleGreater(Ilenth2 * Iwave2))) != 0)
+                    listObj2Draw[1] = "NG-电极不符";//"NG-电极宽度过窄";
+                    hv_Num = 0;
+                    HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(hoSelectedRegions, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+                    //输出NG详情
+                    lsInfo2Draw.Add("2电极长度上下限：" + hv_iFrontDianji_Height_Min + "-" + hv_iFrontDianji_Height_max + "um ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前长度：" + Length1DDD.TupleSelect(0).D.ToString("0.0") + "um ," + Length1DDD.TupleSelect(1).D.ToString("0.0") + " um");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+               
+                    if ((int)(new HTuple((new HTuple(hv_iLeft_Length2_Min.TupleLess(hv_Length2_Cemian))).TupleLess(hv_iLeft_Length2_Max))) != 0)
+                    {
+                    #region  ****电极长度波动幅度-电极长度过小
+                    //if ((Length1DDD.TupleSelect(0) < Iwave2 * Ilenth2) || (Length1DDD.TupleSelect(1) < Iwave2 * Ilenth2)) //电极长边不能小于0.75 *85
+                    //if ((int)(new HTuple(((((Length1DDD.TupleSelect(0) - Ilenth2)).TupleAbs())).TupleGreater(Ilenth2 * Iwave2))) != 0 || (int)(new HTuple(((((Length1DDD.TupleSelect(1) - Ilenth2)).TupleAbs())).TupleGreater(Ilenth2 * Iwave2))) != 0)
+                    listObj2Draw[1] = "NG-电极不符";//"NG-电极宽度过窄";
+                    hv_Num = 0;
+                    HOperatorSet.CountObj(hoSelectedRegions, out hv_Num);
+                    for (int i = 1; i <= hv_Num; i++)
+                    {
+                        HOperatorSet.SelectObj(hoSelectedRegions, out ho_RegionSel, i);
+                        syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
+                    }
+                    //输出NG详情
+                    lsInfo2Draw.Add("2电极长度上下限：" + hv_iFrontDianji_Height_Min + "-" + hv_iFrontDianji_Height_max + "um ");
+                    lsInfo2Draw.Add("OK");
+                    lsInfo2Draw.Add("当前长度：" + Length1DDD.TupleSelect(0).D.ToString("0.0") + "um ," + Length1DDD.TupleSelect(1).D.ToString("0.0") + " um");
+                    lsInfo2Draw.Add("NG");
+                    listObj2Draw.Add("字符串");
+                    listObj2Draw.Add(lsInfo2Draw);
+                    listObj2Draw.Add(new PointF(1800, 100));
+                    return listObj2Draw;
+                    #endregion
+                }
+
+
+              
+
+               
+                #endregion
+
+
                 HTuple hv_Length1Scale = iLength1Scale;
                 HTuple hv_Length2Scale = iLength2Scale;
 
@@ -4895,6 +4966,10 @@ namespace SiyarSixsDetect
                     #endregion
                 }
 
+
+
+
+
                 #endregion
 
                 #endregion
@@ -4943,16 +5018,14 @@ namespace SiyarSixsDetect
                     //图像显示
                     HOperatorSet.Connection(ho_Rectangle_Search, out ho_RegionErrDConn);
                     syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "NG");
-
-                    strDebug += "（1）侧面缺陷检测相关参数：\n";
-                    //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
+                   
+                    //参数显示
+                    strDebug += "（1）侧面缺陷检测相关参数：\n";                  
                     strDebug += "缺陷搜索范围宽度:" + hv_iErrShink1.ToString("0.0") + "\n";
                     strDebug += "缺陷搜索范围高度:" + hv_iErrShink2.ToString("0.0")  + "\n";
 
                     strDebug += "侧面缺陷阈值:" + hv_iErrThr.ToString("0.0")  + "\n";
-                    strDebug += "侧面缺陷面积:" + hv_iErrArea.ToString("0.0")  + "\n";
-                  
-                   
+                    strDebug += "侧面缺陷面积:" + hv_iErrArea.ToString("0.0")  + "\n";                                    
 
                 }
                 strDebug += "\n";
