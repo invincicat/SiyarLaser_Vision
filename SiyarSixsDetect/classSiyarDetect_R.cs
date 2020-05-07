@@ -4118,6 +4118,25 @@ namespace SiyarSixsDetect
 
                 duanmian_dingwei(ho_GrayImage, out ho_Region_Duanmian, hv_parameter, out hv_NGCode);
 
+                //端面参数预处理
+
+                HObject ho_Rect_Duanmian ;
+                HTuple Area_Duanmian, Row_Duanmian, Col_Duanmian, hv_Rectangularity_Duanmian, hv_Length1_Duanmian, hv_Length2_Duanmian;
+                //面积
+                HOperatorSet.AreaCenter(ho_Region_Duanmian, out Area_Duanmian, out Row_Duanmian, out Col_Duanmian);
+
+                //尺寸
+                HOperatorSet.SmallestRectangle2(ho_Region_Duanmian, out hv_Row, out hv_Column, out hv_Phi, out hv_Length1, out hv_Length2);
+                HOperatorSet.GenRectangle2(out ho_Rect_Duanmian, hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
+                hv_Length1_Duanmian = hv_Length1 * 2;
+                hv_Length2_Duanmian = hv_Length2 * 2;
+                 //角度
+                 HTuple Deg_Duanmian;
+
+                HOperatorSet.TupleDeg(hv_Phi, out Deg_Duanmian);
+                //矩形度
+                HOperatorSet.Rectangularity(ho_Region_Duanmian, out hv_Rectangularity_Duanmian);
+
                 #region 程序出错
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
                 {
@@ -4127,13 +4146,37 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+                #region  调试模式
+
+                if (is_Debug)  //调试状态输出信息
+                {
+                    //图像显示
+                    //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
+                    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                    strDebug += "（1）端面定位相关参数：\n";
+                    //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面宽度:" + hv_Length2_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面面积:" + Area_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面角度:" + Deg_Duanmian.D.ToString("0.0") + " 度" + "\n";
+                    strDebug += "端面矩形度:" + hv_Rectangularity_Duanmian.D.ToString("0.0") + "（0最小，1最大，越接近1越类似于矩形）" + "\n";
+
+
+                }
+
+                strDebug += "\n";
+                strMessage = DebugPrint(strDebug, is_Debug);
+                #endregion
+
+
                 #region 缺陷显示（duanmian_dingwei）
-                HOperatorSet.AreaCenter(ho_Region_Duanmian, out Areakkk, out Rowkkk, out Colkkk);
-                if ((int)(new HTuple(hv_NGCode.TupleEqual(1))) != 0) //确定端面面积51963,
+               
+                if ((int)(new HTuple(hv_NGCode.TupleEqual(1))) != 0) //可修改
                 {
                     #region***判断端面面积，过小直接无定位
-                    listObj2Draw[1] = "NG-无定位"; //区域面积不符合要求
-                                                //输出NG详情
+                    listObj2Draw[1] = "NG-无定位";//可修改
+                                               
                     HOperatorSet.CountObj(ho_Region_Duanmian, out hv_Num);
                     for (int i = 1; i <= hv_Num; i++)
                     {
@@ -4141,9 +4184,9 @@ namespace SiyarSixsDetect
                         syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
                     }
 
-                    lsInfo2Draw.Add("端面最小面积：" + hv_Area_Duanmian.ToString() + "pix * ");
+                    lsInfo2Draw.Add("端面最小面积：" + hv_Area_Duanmian.ToString() + "pix");//可修改
                     lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前尺寸：" + Areakkk.D.ToString("0.0") + " pix * ");
+                    lsInfo2Draw.Add("当前尺寸：" + Area_Duanmian.D.ToString("0.0") + " pix");//可修改
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
@@ -4154,12 +4197,12 @@ namespace SiyarSixsDetect
 
 
                 //*判断矩形度
-                HOperatorSet.Rectangularity(ho_Region_Duanmian, out hv_Rectangularity);
+              
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(2))) != 0)
                 {
                     #region***判断端面矩形度，过小NG
                     //HDevelopStop();
-                    if (hv_Rectangularity < (hv_iRecty * 0.9))
+                    if (hv_Rectangularity_Duanmian < (hv_iRecty * 0.9))
                     {
                         #region***判断端面矩形度，过小直接无定位
                         listObj2Draw[1] = "NG-尺寸不符";//"NG-切割不良"
@@ -4173,7 +4216,7 @@ namespace SiyarSixsDetect
                         //输出NG详情
                         lsInfo2Draw.Add("最小矩形度：" + hv_parameter[10].ToString() + "pix * ");
                         lsInfo2Draw.Add("OK");
-                        lsInfo2Draw.Add("当前矩形度：" + hv_Rectangularity.D.ToString("0.000") + " pix * ");
+                        lsInfo2Draw.Add("当前矩形度：" + hv_Rectangularity_Duanmian.D.ToString("0.000") + " pix * ");
                         lsInfo2Draw.Add("NG");
                         listObj2Draw.Add("字符串");
                         listObj2Draw.Add(lsInfo2Draw);
@@ -4195,7 +4238,7 @@ namespace SiyarSixsDetect
                         //输出NG详情
                         lsInfo2Draw.Add("最小矩形度：" + hv_iRecty.ToString() + "pix * ");
                         lsInfo2Draw.Add("OK");
-                        lsInfo2Draw.Add("当前矩形度：" + hv_Rectangularity.D.ToString("0.000") + " pix * ");
+                        lsInfo2Draw.Add("当前矩形度：" + hv_Rectangularity_Duanmian.D.ToString("0.000") + " pix * ");
                         lsInfo2Draw.Add("NG");
                         listObj2Draw.Add("字符串");
                         listObj2Draw.Add(lsInfo2Draw);
@@ -4207,13 +4250,9 @@ namespace SiyarSixsDetect
                 }
 
 
-                HOperatorSet.SmallestRectangle2(ho_Region_Duanmian, out hv_Row, out hv_Column, out hv_Phi, out hv_Length1, out hv_Length2);
-                HOperatorSet.GenRectangle2(out ho_RectPu, hv_Row, hv_Column, hv_Phi, hv_Length1, hv_Length2);
-
+              
                 //0508更改，判断产品角度，歪斜过大直接无定位 正负10度
-                HTuple Deg;
-
-                HOperatorSet.TupleDeg(hv_Phi, out Deg);
+              
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
                 {
                     #region***判断产品角度，歪斜过大直接无定位 正负10度
@@ -4224,7 +4263,7 @@ namespace SiyarSixsDetect
                     listObj2Draw.Add("NG");
 
                     //输出NG详情
-                    lsInfo2Draw.Add("歪斜角度:" + Deg.D.ToString("0.0") + " 度");
+                    lsInfo2Draw.Add("歪斜角度:" + Deg_Duanmian.D.ToString("0.0") + " 度");
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
@@ -4317,12 +4356,15 @@ namespace SiyarSixsDetect
                     //syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
                     //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
-                    //strDebug += "(2)漏镀缺陷检测相关参数：\n";
-                    //strDebug += "漏镀缺陷阈值:" + hv_iloudu_thr.ToString() + "\n";
-                    //strDebug += "漏镀缺陷面积:" + hv_iloudu_area.ToString() + "\n";
-                    //strDebug += "漏镀缺陷检测范围:" + hv_iloudu_erosion.ToString() + "\n";
+                    strDebug += "(2)端头崩碎缺陷检测相关参数：\n";
+                    strDebug += "端头崩碎相对阈值:" + iThr1.ToString() + "\n";
+                    strDebug += "端头崩碎绝对阈值:" + iThr2.ToString() + "\n";
+                    strDebug += "端头崩碎缺陷面积:" + hv_iErrArea2.ToString() + "\n";
+                 
+                    //strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0") + "pix" + "\n";
 
-
+                    //int hv_iThr1 = int.Parse(strUserParam[8]);     //iErrThres  = 40    缺陷阈值40
+                    //int hv_iThr2 = int.Parse(strUserParam[9]);      //iErrArea = 50      缺陷面积50
 
 
                 }
@@ -4385,7 +4427,7 @@ namespace SiyarSixsDetect
                     syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
                     //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
 
-                    strDebug += "(2)漏镀缺陷检测相关参数：\n";
+                    strDebug += "(3)漏镀缺陷检测相关参数：\n";
                     strDebug += "漏镀缺陷阈值:" + hv_iloudu_thr.ToString() + "\n";
                     strDebug += "漏镀缺陷面积:" + hv_iloudu_area.ToString() + "\n";
                     strDebug += "漏镀缺陷检测范围:" + hv_iloudu_erosion.ToString() + "\n";
@@ -4500,21 +4542,7 @@ namespace SiyarSixsDetect
                 HObject ho_Region_cemian, ho_Rectangle_Cemian;
                 HTuple hv_NGCode, hv_parameter;
 
-                #region 调试模式初始化
-                bool is_Debug;
-                if (strMessage == "0")
-                {
-                    is_Debug = false;
-                }
-                else
-                {
-                    is_Debug = true;
-                }
-
-
-                //初始化调试输出内容
-                string strDebug = "";
-                #endregion
+               
 
 
 
@@ -4594,6 +4622,43 @@ namespace SiyarSixsDetect
 
                 #endregion
 
+                #region 调试模式初始化
+                bool is_Debug;
+                if (strMessage == "0")
+                {
+                    is_Debug = false;
+                }
+                else
+                {
+                    is_Debug = true;
+                }
+
+
+                //初始化调试输出内容
+                string strDebug = "";
+
+                #region  缺陷检测开关显示
+
+                int ErrorIsOn = 0;
+                #region  A_产品沾污
+                ErrorIsOn = A_产品沾污;
+                if (ErrorIsOn == 0)
+                {
+                    strDebug += "A_产品沾污" + ":" + "不检测" + "\n";
+                }
+
+                else
+                {
+                    strDebug += "A_产品沾污" + ":" + "检测" + "\n";
+                }
+                #endregion
+             
+
+                strMessage = DebugPrint(strDebug, is_Debug);
+                #endregion
+
+
+                #endregion
 
                 #region****保存所有图片，不区分正反面
 
@@ -4707,12 +4772,34 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+                //侧面参数预处理
+                //HObject;
+                HTuple hv_Length1_Cemian, hv_Length2_Cemian;
+
+                HOperatorSet.SmallestRectangle2(ho_Region_cemian, out hv_Row, out hv_Column,
+                       out hv_Phi, out hv_Length1, out hv_Length2);
+
+                hv_Length1_Cemian = hv_Length1 * 2;
+                hv_Length2_Cemian = hv_Length2 * 2;
+
                 #region 调试模式
                 if (is_Debug)
-                {
+                {                   
+                    //图像显示
                     HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
+                    syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
 
+
+                    strDebug += "（1）侧面定位相关参数：\n";
+                    //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    strDebug += "侧面长度:" + hv_Length1_Cemian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "侧面宽度:" + hv_Length2_Cemian.D.ToString("0.0") + "pix" + "\n";
+
+                   
                 }
+                strDebug += "\n";
+                strMessage = DebugPrint(strDebug, is_Debug);
+
                 #endregion
 
                 #region 缺陷显示（cemian_dingwei）
@@ -4729,9 +4816,9 @@ namespace SiyarSixsDetect
                     }
                     return listObj2Draw;
                     #endregion
-
                 }
 
+     
                 if ((int)(new HTuple(hv_NGCode.TupleEqual(2))) != 0)
                 {
                     #region ***提取侧面-分割线提取失败
@@ -4749,8 +4836,7 @@ namespace SiyarSixsDetect
 
 
 
-                HOperatorSet.SmallestRectangle2(ho_Region_cemian, out hv_Row, out hv_Column,
-                         out hv_Phi, out hv_Length1, out hv_Length2);
+              
 
 
                 #region ***侧面尺寸
@@ -4854,9 +4940,23 @@ namespace SiyarSixsDetect
                 #region  调试模式
                 if (is_Debug)
                 {
-                    HOperatorSet.Connection(ho_Rectangle_Cemian, out ho_RegionErrDConn);
-                    syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "OK");
+                    //图像显示
+                    HOperatorSet.Connection(ho_Rectangle_Search, out ho_RegionErrDConn);
+                    syShowRegionBorder(ho_RegionErrDConn, ref listObj2Draw, "NG");
+
+                    strDebug += "（1）侧面缺陷检测相关参数：\n";
+                    //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
+                    strDebug += "缺陷搜索范围宽度:" + hv_iErrShink1.ToString("0.0") + "\n";
+                    strDebug += "缺陷搜索范围高度:" + hv_iErrShink2.ToString("0.0")  + "\n";
+
+                    strDebug += "侧面缺陷阈值:" + hv_iErrThr.ToString("0.0")  + "\n";
+                    strDebug += "侧面缺陷面积:" + hv_iErrArea.ToString("0.0")  + "\n";
+                  
+                   
+
                 }
+                strDebug += "\n";
+                strMessage = DebugPrint(strDebug, is_Debug);
                 #endregion
 
 
@@ -4897,28 +4997,7 @@ namespace SiyarSixsDetect
                 A_产品沾污END:
                 #endregion
 
-                //调试模式   
-                #region  调试模式           
-                if (is_Debug)
-                {
-                    strDebug += "整体尺寸参数";
-                    //strMessage = DebugPrint(strDebug, is_Debug);
-                }
-                #endregion
-
-
-
-
-                #region 程序出错
-                if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
-                {
-                    listObj2Draw[1] = "NG-程序出错";
-                    dhDll.frmMsg.Log("背导ok" + "程序出错" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
-                    return listObj2Draw;
-                }
-                #endregion
-
-
+ 
                 #region ---- *** 超时处理  *** ----
 
                 if (sw.ElapsedMilliseconds > iTimeout)
