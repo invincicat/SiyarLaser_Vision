@@ -4160,11 +4160,19 @@ namespace SiyarSixsDetect
                     strDebug += "（1）端面定位相关参数：\n";
                     //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
                     strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0") + "pix" + "\n";
-                    strDebug += "端面宽度:" + hv_Length2_Duanmian.D.ToString("0.0") + "pix" + "\n";
-                    strDebug += "端面面积:" + Area_Duanmian.D.ToString("0.0") + "pix" + "\n";
-                    strDebug += "端面角度:" + Deg_Duanmian.D.ToString("0.0") + " 度" + "\n";
-                    strDebug += "端面矩形度:" + hv_Rectangularity_Duanmian.D.ToString("0.0") + "（0最小，1最大，越接近1越类似于矩形）" + "\n";
+                    strDebug += "端面长度上下限：" + hv_iDuanmian_Length1_Min + "-" + hv_iDuanmian_Length1_Max + "\n";
+                    strDebug += "端面高度:" + hv_Length2_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面高度上下限：" + hv_iDuanmian_Length2_Min + "-" + hv_iDuanmian_Length2_Max + "\n";
 
+                    strDebug += "端面面积:" + Area_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面最小面积：" + hv_Area_Duanmian.ToString() + "pix" + "\n";//可修改
+
+                    strDebug += "端面角度:" + Deg_Duanmian.D.ToString("0.0") + " 度" + "\n";
+                    strDebug += "歪斜角度上限:" + Deg_Duanmian.D.ToString("0.0") + " 度" + "\n";
+
+                    strDebug += "端面矩形度:" + hv_Rectangularity_Duanmian.D.ToString("0.0") + "（0最小，1最大，越接近1越类似于矩形）" + "\n";
+                    strDebug += "最小矩形度：" + hv_iRecty.ToString() + "\n";
+                 
 
                 }
 
@@ -4239,7 +4247,7 @@ namespace SiyarSixsDetect
                             syShowRegionBorder(ho_RegionSel, ref listObj2Draw, "NG");
                         }
                         //输出NG详情
-                        lsInfo2Draw.Add("最小矩形度：" + hv_iRecty.ToString() + "pix * ");
+                        lsInfo2Draw.Add("最小矩形度：" + hv_iRecty.ToString() );
                         lsInfo2Draw.Add("OK");
                         lsInfo2Draw.Add("当前矩形度：" + hv_Rectangularity_Duanmian.D.ToString("0.000") + " pix * ");
                         lsInfo2Draw.Add("NG");
@@ -4303,9 +4311,9 @@ namespace SiyarSixsDetect
                         syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
                     }
                     //输出NG详情
-                    lsInfo2Draw.Add("端面长度上下限：" + hv_iDuanmian_Length1_Min + "-" + hv_iDuanmian_Length1_Max + "um ");
+                    lsInfo2Draw.Add("端面长度上下限：" + hv_iDuanmian_Length1_Min + "-" + hv_iDuanmian_Length1_Max );
                     lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前长度：" + hv_Length1_Duanmian.TupleSelect(0).D.ToString("0.0") + " um");
+                    lsInfo2Draw.Add("当前长度：" + hv_Length1_Duanmian.TupleSelect(0).D.ToString("0.0") );
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
@@ -4333,9 +4341,9 @@ namespace SiyarSixsDetect
                         syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
                     }
                     //输出NG详情
-                    lsInfo2Draw.Add("端面宽度上下限：" + hv_iDuanmian_Length2_Min + "-" + hv_iDuanmian_Length2_Max + "um ");
+                    lsInfo2Draw.Add("端面高度上下限：" + hv_iDuanmian_Length2_Min + "-" + hv_iDuanmian_Length2_Max );
                     lsInfo2Draw.Add("OK");
-                    lsInfo2Draw.Add("当前长度：" + hv_Length2_Duanmian.TupleSelect(0).D.ToString("0.0") + " um");
+                    lsInfo2Draw.Add("当前高度：" + hv_Length2_Duanmian.TupleSelect(0).D.ToString("0.0") );
                     lsInfo2Draw.Add("NG");
                     listObj2Draw.Add("字符串");
                     listObj2Draw.Add(lsInfo2Draw);
@@ -5806,9 +5814,7 @@ namespace SiyarSixsDetect
                     return listObj2Draw;
 
                     #endregion
-                }
-
-               
+                }              
 
                 #region ****产品整体尺寸测量
                 //HTuple ipix = 0.001;
@@ -6054,7 +6060,6 @@ namespace SiyarSixsDetect
                     HOperatorSet.SmallestRectangle2(ho_Citi_Region, out hv_Citi_Row, out hv_Citi_Column, out hv_Citi_Phi, out hv_Citi_Length1, out hv_Citi_Length2);
 
                     hv_Citi_Width = hv_Citi_Length1 * 2 * ipix * 1000; //像素长度转换为实际距离       
-
                     hv_Citi_Height = hv_Citi_Length2 * 2 * ipix * 1000; //像素长度转换为实际距离    
 
                     //背面电极区域-尺寸
@@ -6329,6 +6334,7 @@ namespace SiyarSixsDetect
                     #endregion
 
 
+
                     #region****电极长宽判定
                     //延锡缺陷检测
                     HTuple hv_BootomDianji_Width , hv_BootomDianji_Height;
@@ -6420,6 +6426,7 @@ namespace SiyarSixsDetect
                     #endregion
 
 
+
                     #region 调试模式
                     if (is_Debug)
                     {
@@ -6469,8 +6476,6 @@ namespace SiyarSixsDetect
 
 
                     global_contamination(ho_GrayImage, hoSelectedRegions1, out ho_ErrRegion, hv_Parameter_GB, out hv_NGCode);
-
-
 
 
                     #region ***程序出错
