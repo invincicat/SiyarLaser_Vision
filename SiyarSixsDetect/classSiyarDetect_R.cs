@@ -3941,10 +3941,16 @@ namespace SiyarSixsDetect
                 int hv_iErrArea2 = int.Parse(strUserParam[20]);      //矩形腐蚀半径5
                 int iSobelSize = int.Parse(strUserParam[21]);      //缺陷腐蚀半径4     缺陷面积50
                 int iThr1 = int.Parse(strUserParam[22]);
-                float iClosCir = float.Parse(strUserParam[23]);      
 
-                float iEroCir1 = float.Parse(strUserParam[24]) / 10;      
-                float iEroCir2 = float.Parse(strUserParam[25]) / 10;      
+
+                float hv_iErosionRect1 = float.Parse(strUserParam[23]);
+                float hv_iEroCir1 = float.Parse(strUserParam[24]);
+                float hv_iCloCir1 = float.Parse(strUserParam[25]);
+
+          
+          
+
+
                 int iThr2 = int.Parse(strUserParam[26]);      //
 
                 int hv_iloudu_thr = int.Parse(strUserParam[27]);//漏镀缺陷阈值（80）
@@ -3988,10 +3994,15 @@ namespace SiyarSixsDetect
 
                 hv_parameter = hv_parameter.TupleConcat(iSobelSize);
                 hv_parameter = hv_parameter.TupleConcat(iThr1);
-                hv_parameter = hv_parameter.TupleConcat(iClosCir);
-                hv_parameter = hv_parameter.TupleConcat(iEroCir1);
 
-                hv_parameter = hv_parameter.TupleConcat(iEroCir2);
+                hv_parameter = hv_parameter.TupleConcat(hv_iErosionRect1);
+                hv_parameter = hv_parameter.TupleConcat(hv_iEroCir1);
+                hv_parameter = hv_parameter.TupleConcat(hv_iCloCir1);
+
+
+            
+
+
                 hv_parameter = hv_parameter.TupleConcat(iThr2);
 
                 hv_parameter = hv_parameter.TupleConcat(hv_iloudu_thr);
@@ -9153,7 +9164,7 @@ namespace SiyarSixsDetect
             }
         }
 
-        public static void Detect_Err_12(HObject ho_GrayImage, HObject ho_Region_Duanmian, out HObject ho_Region_Err2,
+        public static void Detect_Err_12(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_Err2,
       HTuple hv_parameter, out HTuple hv_NGCode)
         {
 
@@ -9162,26 +9173,29 @@ namespace SiyarSixsDetect
 
             // Local iconic variables 
 
-            HObject ho_RegionErosion = null, ho_ImageReduced = null;
-            HObject ho_ImageMean1 = null, ho_Region1 = null, ho_Region2 = null;
-            HObject ho_RegionErosion3 = null, ho_ImageReduced6 = null, ho_Region6 = null;
-            HObject ho_ConnectedRegions1 = null, ho_SelectedRegions7 = null;
+            HObject ho_GrayImage1 = null, ho_RegionErosion = null;
+            HObject ho_ImageReduced = null, ho_ImageMean1 = null, ho_Region1 = null;
+            HObject ho_Region2 = null, ho_RegionErosion3 = null, ho_RegionClosing = null;
+            HObject ho_ImageReduced6 = null, ho_Region6 = null, ho_ConnectedRegions1 = null;
+            HObject ho_SelectedRegions7 = null;
 
             // Local control variables 
 
             HTuple hv_iErrArea2 = new HTuple(), hv_iSobelSize = new HTuple();
-            HTuple hv_iThr1 = new HTuple(), hv_iClosCir = new HTuple();
-            HTuple hv_iEroCir1 = new HTuple(), hv_iEroCir2 = new HTuple();
+            HTuple hv_iThr1 = new HTuple(), hv_iErosionRect1 = new HTuple();
+            HTuple hv_iEroCir1 = new HTuple(), hv_iCloCir1 = new HTuple();
             HTuple hv_iThr2 = new HTuple(), hv_UsedThreshold = new HTuple();
             HTuple hv_Number1 = new HTuple(), hv_exc = new HTuple();
             // Initialize local and output iconic variables 
             HOperatorSet.GenEmptyObj(out ho_Region_Err2);
+            HOperatorSet.GenEmptyObj(out ho_GrayImage1);
             HOperatorSet.GenEmptyObj(out ho_RegionErosion);
             HOperatorSet.GenEmptyObj(out ho_ImageReduced);
             HOperatorSet.GenEmptyObj(out ho_ImageMean1);
             HOperatorSet.GenEmptyObj(out ho_Region1);
             HOperatorSet.GenEmptyObj(out ho_Region2);
             HOperatorSet.GenEmptyObj(out ho_RegionErosion3);
+            HOperatorSet.GenEmptyObj(out ho_RegionClosing);
             HOperatorSet.GenEmptyObj(out ho_ImageReduced6);
             HOperatorSet.GenEmptyObj(out ho_Region6);
             HOperatorSet.GenEmptyObj(out ho_ConnectedRegions1);
@@ -9211,10 +9225,10 @@ namespace SiyarSixsDetect
                         hv_iThr1 = hv_parameter.TupleSelect(
                             13);
                     }
-                    hv_iClosCir.Dispose();
+                    hv_iErosionRect1.Dispose();
                     using (HDevDisposeHelper dh = new HDevDisposeHelper())
                     {
-                        hv_iClosCir = hv_parameter.TupleSelect(
+                        hv_iErosionRect1 = hv_parameter.TupleSelect(
                             14);
                     }
                     hv_iEroCir1.Dispose();
@@ -9223,12 +9237,14 @@ namespace SiyarSixsDetect
                         hv_iEroCir1 = hv_parameter.TupleSelect(
                             15);
                     }
-                    hv_iEroCir2.Dispose();
+                    hv_iCloCir1.Dispose();
                     using (HDevDisposeHelper dh = new HDevDisposeHelper())
                     {
-                        hv_iEroCir2 = hv_parameter.TupleSelect(
+                        hv_iCloCir1 = hv_parameter.TupleSelect(
                             16);
                     }
+
+
                     hv_iThr2.Dispose();
                     using (HDevDisposeHelper dh = new HDevDisposeHelper())
                     {
@@ -9236,11 +9252,17 @@ namespace SiyarSixsDetect
                             17);
                     }
 
+
+
+                    ho_GrayImage1.Dispose();
+                    HOperatorSet.Rgb1ToGray(ho_Image, out ho_GrayImage1);
+                    //decompose3 (Image, Image1, Image2, Image3)
+                    //*     GrayImage1 := Image2
                     ho_RegionErosion.Dispose();
                     HOperatorSet.ErosionRectangle1(ho_Region_Duanmian, out ho_RegionErosion,
-                        7, 7);
+                        hv_iErosionRect1, hv_iErosionRect1);
                     ho_ImageReduced.Dispose();
-                    HOperatorSet.ReduceDomain(ho_GrayImage, ho_RegionErosion, out ho_ImageReduced
+                    HOperatorSet.ReduceDomain(ho_Image, ho_RegionErosion, out ho_ImageReduced
                         );
 
                     ho_ImageMean1.Dispose();
@@ -9251,10 +9273,12 @@ namespace SiyarSixsDetect
                     ho_Region2.Dispose();
                     HOperatorSet.Threshold(ho_ImageMean1, out ho_Region2, 0, hv_UsedThreshold - hv_iThr1);
                     ho_RegionErosion3.Dispose();
-                    HOperatorSet.ErosionCircle(ho_Region2, out ho_RegionErosion3, 3);
+                    HOperatorSet.ErosionCircle(ho_Region2, out ho_RegionErosion3, hv_iEroCir1);
+                    ho_RegionClosing.Dispose();
+                    HOperatorSet.ClosingCircle(ho_RegionErosion3, out ho_RegionClosing, hv_iCloCir1);
 
                     ho_ImageReduced6.Dispose();
-                    HOperatorSet.ReduceDomain(ho_GrayImage, ho_RegionErosion3, out ho_ImageReduced6
+                    HOperatorSet.ReduceDomain(ho_Image, ho_RegionClosing, out ho_ImageReduced6
                         );
                     ho_Region6.Dispose();
                     HOperatorSet.Threshold(ho_ImageReduced6, out ho_Region6, 0, hv_iThr2);
@@ -9271,12 +9295,14 @@ namespace SiyarSixsDetect
                     {
                         hv_NGCode.Dispose();
                         hv_NGCode = 4;
+                        ho_GrayImage1.Dispose();
                         ho_RegionErosion.Dispose();
                         ho_ImageReduced.Dispose();
                         ho_ImageMean1.Dispose();
                         ho_Region1.Dispose();
                         ho_Region2.Dispose();
                         ho_RegionErosion3.Dispose();
+                        ho_RegionClosing.Dispose();
                         ho_ImageReduced6.Dispose();
                         ho_Region6.Dispose();
                         ho_ConnectedRegions1.Dispose();
@@ -9285,9 +9311,9 @@ namespace SiyarSixsDetect
                         hv_iErrArea2.Dispose();
                         hv_iSobelSize.Dispose();
                         hv_iThr1.Dispose();
-                        hv_iClosCir.Dispose();
+                        hv_iErosionRect1.Dispose();
                         hv_iEroCir1.Dispose();
-                        hv_iEroCir2.Dispose();
+                        hv_iCloCir1.Dispose();
                         hv_iThr2.Dispose();
                         hv_UsedThreshold.Dispose();
                         hv_Number1.Dispose();
@@ -9299,35 +9325,8 @@ namespace SiyarSixsDetect
 
 
 
-                    //threshold (EdgeAmplitude1, Region, 30, 255)
-                    //closing_circle (Region, RegionClosing, iClosCir)
-                    //erosion_circle (RegionClosing, RegionErosion1, iEroCir1)
-                    //fill_up (RegionErosion1, RegionFillUp)
-                    //difference (RegionErosion, RegionClosing, RegionDifference2)
-                    //iSobelSize
-                    //exp_image (ImageReduced5, ExpImage, 2)
-
-                    //scale_image_max (ExpImage, ImageScaleMax)
 
 
-                    //threshold (ImageScaleMax, Region5, 200, 255)
-
-                    //closing_circle (Region5, RegionClosing, iClosCir)
-                    //erosion_circle (RegionClosing, RegionErosion1, iEroCir1)
-                    //fill_up (RegionErosion1, RegionFillUp)
-                    //difference (RegionErosion, RegionErosion1, RegionDifference2)
-
-                    //erosion_circle (RegionDifference2, RegionErosion2, iEroCir2)
-                    //reduce_domain (GrayImage, RegionErosion2, ImageReduced6)
-                    //threshold (ImageReduced6, Region6, 0, 120)
-                    //connection (Region6, ConnectedRegions1)
-                    //select_shape (ConnectedRegions1, SelectedRegions7, 'area', 'and', iErrArea2, 99999)
-                    //Region_Err2 := SelectedRegions7
-                    //count_obj (Region_Err2, Number1)
-                    //if (Number1>0)
-                    //NGCode := 4
-                    //return ()
-                    //endif
 
 
                 }
@@ -9339,12 +9338,14 @@ namespace SiyarSixsDetect
                     hv_NGCode = 34;
                 }
 
+                ho_GrayImage1.Dispose();
                 ho_RegionErosion.Dispose();
                 ho_ImageReduced.Dispose();
                 ho_ImageMean1.Dispose();
                 ho_Region1.Dispose();
                 ho_Region2.Dispose();
                 ho_RegionErosion3.Dispose();
+                ho_RegionClosing.Dispose();
                 ho_ImageReduced6.Dispose();
                 ho_Region6.Dispose();
                 ho_ConnectedRegions1.Dispose();
@@ -9353,9 +9354,9 @@ namespace SiyarSixsDetect
                 hv_iErrArea2.Dispose();
                 hv_iSobelSize.Dispose();
                 hv_iThr1.Dispose();
-                hv_iClosCir.Dispose();
+                hv_iErosionRect1.Dispose();
                 hv_iEroCir1.Dispose();
-                hv_iEroCir2.Dispose();
+                hv_iCloCir1.Dispose();
                 hv_iThr2.Dispose();
                 hv_UsedThreshold.Dispose();
                 hv_Number1.Dispose();
@@ -9365,12 +9366,14 @@ namespace SiyarSixsDetect
             }
             catch (hvppleException HDevExpDefaultException)
             {
+                ho_GrayImage1.Dispose();
                 ho_RegionErosion.Dispose();
                 ho_ImageReduced.Dispose();
                 ho_ImageMean1.Dispose();
                 ho_Region1.Dispose();
                 ho_Region2.Dispose();
                 ho_RegionErosion3.Dispose();
+                ho_RegionClosing.Dispose();
                 ho_ImageReduced6.Dispose();
                 ho_Region6.Dispose();
                 ho_ConnectedRegions1.Dispose();
@@ -9379,9 +9382,9 @@ namespace SiyarSixsDetect
                 hv_iErrArea2.Dispose();
                 hv_iSobelSize.Dispose();
                 hv_iThr1.Dispose();
-                hv_iClosCir.Dispose();
+                hv_iErosionRect1.Dispose();
                 hv_iEroCir1.Dispose();
-                hv_iEroCir2.Dispose();
+                hv_iCloCir1.Dispose();
                 hv_iThr2.Dispose();
                 hv_UsedThreshold.Dispose();
                 hv_Number1.Dispose();
