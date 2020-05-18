@@ -3941,11 +3941,11 @@ namespace SiyarSixsDetect
                 int hv_iErrArea2 = int.Parse(strUserParam[20]);      //矩形腐蚀半径5
                 int iSobelSize = int.Parse(strUserParam[21]);      //缺陷腐蚀半径4     缺陷面积50
                 int iThr1 = int.Parse(strUserParam[22]);
-                float iClosCir = float.Parse(strUserParam[23]);      //长宽比10
+                float iClosCir = float.Parse(strUserParam[23]);      
 
-                float iEroCir1 = float.Parse(strUserParam[24]) / 10;      //长宽比10
-                float iEroCir2 = float.Parse(strUserParam[25]) / 10;      //长宽比10
-                int iThr2 = int.Parse(strUserParam[26]);      //长宽比10
+                float iEroCir1 = float.Parse(strUserParam[24]) / 10;      
+                float iEroCir2 = float.Parse(strUserParam[25]) / 10;      
+                int iThr2 = int.Parse(strUserParam[26]);      //
 
                 int hv_iloudu_thr = int.Parse(strUserParam[27]);//漏镀缺陷阈值（80）
                 int hv_iloudu_area = int.Parse(strUserParam[28]);//漏镀缺陷面积（100）
@@ -4159,12 +4159,12 @@ namespace SiyarSixsDetect
 
                     strDebug += "（1）端面定位相关参数：\n";
                     //strDebug += "粗定位阈值:" + hv_iloudu_thr.ToString() + "\n";
-                    strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0")  + "\n";
                     strDebug += "端面长度上下限：" + hv_iDuanmian_Length1_Min + "-" + hv_iDuanmian_Length1_Max + "\n";
-                    strDebug += "端面高度:" + hv_Length2_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面高度:" + hv_Length2_Duanmian.D.ToString("0.0")  + "\n";
                     strDebug += "端面高度上下限：" + hv_iDuanmian_Length2_Min + "-" + hv_iDuanmian_Length2_Max + "\n";
 
-                    strDebug += "端面面积:" + Area_Duanmian.D.ToString("0.0") + "pix" + "\n";
+                    strDebug += "端面面积:" + Area_Duanmian.D.ToString("0.0")  + "\n";
                     strDebug += "端面最小面积：" + hv_Area_Duanmian.ToString() + "pix" + "\n";//可修改
 
                     strDebug += "端面角度:" + Deg_Duanmian.D.ToString("0.0") + " 度" + "\n";
@@ -5199,7 +5199,7 @@ namespace SiyarSixsDetect
                 HTuple iBiggstArea_beidianji = int.Parse(strUserParam[31]);   //背电极最大面积
 
                 HTuple hv_iTopDianji_Length2_Scale = float.Parse(strUserParam[32]); //正面左右电极比值
-                float Length2DDD_beimian_Std = float.Parse(strUserParam[33]);   //背面左右电极比值
+                HTuple Length2DDD_beimian_Std = float.Parse(strUserParam[33]);   //背面左右电极比值
 
 
 
