@@ -3958,6 +3958,16 @@ namespace SiyarSixsDetect
                 float hv_iloudu_erosion = float.Parse(strUserParam[29]);//漏镀缺陷检测范围（10）
 
 
+                HTuple hv_iSobelThr = float.Parse(strUserParam[30]);      //
+
+                HTuple hv_iSobelClosing1 = float.Parse(strUserParam[31]);//漏镀缺陷阈值（80）
+                HTuple hv_iSobelClosing2 = float.Parse(strUserParam[32]);//漏镀缺陷面积（100）
+                HTuple hv_iSobelArea = float.Parse(strUserParam[33]);//漏镀缺陷检测范围（10）
+
+           
+
+
+
                 int iProductCode = int.Parse(strUserParam[94]);     //区分各工位
                 int iSaveImg = int.Parse(strUserParam[95]);     //是否保存图片，1-保存jpeg，2-保存bmp
 
@@ -4009,6 +4019,14 @@ namespace SiyarSixsDetect
                 hv_parameter = hv_parameter.TupleConcat(hv_iloudu_area);
                 hv_parameter = hv_parameter.TupleConcat(hv_iloudu_erosion);
 
+
+                hv_parameter = hv_parameter.TupleConcat(hv_iSobelThr);
+
+                hv_parameter = hv_parameter.TupleConcat(hv_iSobelClosing1);
+                hv_parameter = hv_parameter.TupleConcat(hv_iSobelClosing2);
+                hv_parameter = hv_parameter.TupleConcat(hv_iSobelArea);
+
+              
 
                 #endregion
 
@@ -4102,13 +4120,14 @@ namespace SiyarSixsDetect
                 }
                 #endregion
 
+                HObject ho_Image1, ho_Image3;
 
                 #region ***判断彩色还是黑白，彩色图像二值化
                 HOperatorSet.CountChannels(hoReduced, out NChannel);
                 if (NChannel == 3) //三通道彩色
                 {
-                    //HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
-                    HOperatorSet.Rgb1ToGray(hoReduced, out ho_GrayImage);
+                    HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_GrayImage, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
+                    //HOperatorSet.Rgb1ToGray(hoReduced, out ho_GrayImage);
                 }
                 else  //单通道黑白
                 {
@@ -4130,7 +4149,7 @@ namespace SiyarSixsDetect
 
 
 
-                duanmian_dingwei(ho_GrayImage, out ho_Region_Duanmian, hv_parameter, out hv_NGCode);
+                duanmian_dingwei(hoReduced, out ho_Region_Duanmian, hv_parameter, out hv_NGCode);
 
                 //端面参数预处理
 
@@ -4366,10 +4385,72 @@ namespace SiyarSixsDetect
                 #endregion
                 #endregion
 
+                HObject ho_Region_Err_Sobel;
+
+                //Detect_Err_Sobel(ho_GrayImage, ho_Region_Duanmian, out ho_Region_Err_Sobel, hv_parameter, out hv_NGCode);
+
+                //ho_Region_Display = ho_Region_Err_Sobel;//可修改
+                //HOperatorSet.CountObj(ho_Region_Display, out hv_Num_Display);
+                //HOperatorSet.Union1(ho_Region_Display, out ho_Union_Dispay);
+                //HOperatorSet.AreaCenter(ho_Union_Dispay, out hv_Area_Display, out hv_Row_Display, out hv_Column_Display);
+
+               
+                //#region  调试模式
+
+                //if (is_Debug)  //调试状态输出信息
+                //{
+                //    //图像显示
+                //    syShowRegionBorder(ho_Region_Duanmian, ref listObj2Draw, "OK");
+                //    //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                //    strDebug += "(2)端头崩碎缺陷检测相关参数：\n";
+                //    strDebug += "端头崩碎2-Sobel阈值:" + hv_iSobelThr.ToString() + "\n";
+                //    strDebug += "端头崩碎2-闭运算1:" + hv_iSobelClosing1.ToString() + "\n";
+                //    strDebug += "端头崩碎2-闭运算2:" + hv_iSobelClosing2.ToString() + "\n";
+                //    strDebug += "端头崩碎2-缺陷面积:" + hv_iSobelArea.ToString() + "\n";
+
+                //    strDebug += "端头崩碎2-当前缺陷面积:" + hv_Area_Display.ToString() + "\n";
 
 
 
+                //    //strDebug += "端面长度:" + hv_Length1_Duanmian.D.ToString("0.0") + "pix" + "\n";
 
+                //    //int hv_iThr1 = int.Parse(strUserParam[8]);     //iErrThres  = 40    缺陷阈值40
+                //    //int hv_iThr2 = int.Parse(strUserParam[9]);      //iErrArea = 50      缺陷面积50
+
+
+                //}
+
+                //strDebug += "\n";
+                //strMessage = DebugPrint(strDebug, is_Debug);
+                //#endregion
+
+            //    #region 缺陷显示（Detect_Err_12）
+              
+            //    if (A_端头崩碎 == 0) goto A_端头崩碎2END;
+            //    if ((int)(new HTuple(hv_NGCode.TupleEqual(4))) != 0)//可修改
+            //    {
+            //        #region
+            //        listObj2Draw[1] = "NG-端头崩碎";//可修改
+            //        for (int i = 1; i <= hv_Num_Display; i++)
+            //        {
+            //            HOperatorSet.SelectObj(ho_Region_Display, out ho_Region_Sel, i);
+            //            syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
+            //        }
+
+            //        //输出NG详情
+            //        lsInfo2Draw.Add("端头缺陷最大面积22222：" + hv_iSobelArea.ToString() + " pix ");//可修改
+            //        lsInfo2Draw.Add("OK");
+            //        lsInfo2Draw.Add("当前面积：" + hv_Area_Display.D.ToString("0.0") + "pix");
+            //        lsInfo2Draw.Add("NG");
+            //        listObj2Draw.Add("字符串");
+            //        listObj2Draw.Add(lsInfo2Draw);
+            //        listObj2Draw.Add(new PointF(1800, 100));
+            //        return listObj2Draw;
+            //        #endregion
+            //    }
+            //A_端头崩碎2END:
+            //    #endregion
 
                 //端面缺陷检测
                 Detect_Err_12(ho_GrayImage, ho_Region_Duanmian, out ho_Region_Err2, hv_parameter, out hv_NGCode);
@@ -5269,7 +5350,6 @@ namespace SiyarSixsDetect
 
                 int EroWidth3 = int.Parse(strUserParam[72]);//保护层腐蚀宽度3
                 int EroHeight3 = int.Parse(strUserParam[73]);//保护层腐蚀高度3
-
                 //电极漏磁、电极缺角检测           
                 int hv_iShangpa = int.Parse(strUserParam[74]);  //是否检测，电极两端区域。1-检测电极两端区域，0（或除一以外）-不检
                 int hv_iScale_height_1 = int.Parse(strUserParam[75]);// 上爬高度-1     电极上爬不足高度收窄
@@ -5311,6 +5391,14 @@ namespace SiyarSixsDetect
                 ipix = ipix / 1000000;
 
                 int iSaveImg2 = int.Parse(strUserParam[97]);//
+                int B_字码有无 = int.Parse(strUserParam[98]); //字码有无
+
+
+
+
+                HTuple hv_ilouduzhengmian_thr = float.Parse(strUserParam[100]);
+                HTuple hv_ilouduzhengmian_area = float.Parse(strUserParam[101]);
+                HTuple hv_ilouduzhengmian_erosion = float.Parse(strUserParam[102]);
 
                 /*无定位
                  * 超时
@@ -5343,6 +5431,9 @@ namespace SiyarSixsDetect
 
                 int A_瓷体挂锡 = iCheckSelAll ? 1 : int.Parse(strUserParam[118]);   //A_瓷体挂锡
                 int A_瓷体脏片 = iCheckSelAll ? 1 : int.Parse(strUserParam[119]); //A_瓷体脏片     
+
+                int A_正面漏镀检测 = iCheckSelAll ? 1 : int.Parse(strUserParam[120]); //A_瓷体脏片     
+
 
                 //缺陷显示
                 HObject ho_Region_Display, ho_Union_Dispay, ho_Region_Sel;
@@ -5748,11 +5839,13 @@ namespace SiyarSixsDetect
 
                 //判断彩色还是黑白
                 #region****判断彩色还是黑白，彩色图像二值化
+                HObject ho_Image_R, ho_Image_G;
                 HOperatorSet.CountChannels(hoReduced, out NChannel);
                 if (NChannel == 3) //三通道彩色
                 {
                     //HOperatorSet.Decompose3(hoReduced, out ho_Image1, out ho_ImageReduced, out ho_Image3); //hoReduced 转换到 ho_ImageReduced
                     HOperatorSet.Rgb1ToGray(hoReduced, out ho_GrayImage);
+                    //HOperatorSet.Decompose3(hoReduced, out ho_Image_R, out ho_Image_G, out ho_GrayImage);
 
                 }
                 else  //单通道黑白
@@ -6075,14 +6168,14 @@ namespace SiyarSixsDetect
 
                     //背面电极区域-尺寸
                     HObject ho_BottomDianji_Region, ho_BottomDianji_SortedRegions;
-                    HTuple hv_BottomDianji_Area, hv_BottomDianji_CenterRow, hv_BottomDianji_CenterColumn ;
-                    HTuple hv_BottomDianji_Row , hv_BottomDianji_Column, hv_BottomDianji_Phi, hv_BottomDianji_Length1, hv_BottomDianji_Length2;
+                    HTuple hv_BottomDianji_Area, hv_BottomDianji_CenterRow, hv_BottomDianji_CenterColumn;
+                    HTuple hv_BottomDianji_Row, hv_BottomDianji_Column, hv_BottomDianji_Phi, hv_BottomDianji_Length1, hv_BottomDianji_Length2;
                     HTuple hv_BottomDianji_Rectangularity;
                     ho_BottomDianji_Region = ho_Region_dianji;
                     HOperatorSet.SortRegion(ho_BottomDianji_Region, out ho_BottomDianji_SortedRegions, "first_point", "true", "column");
                     HOperatorSet.AreaCenter(ho_BottomDianji_SortedRegions, out hv_BottomDianji_Area, out hv_BottomDianji_CenterRow, out hv_BottomDianji_CenterColumn);
                     HOperatorSet.SmallestRectangle2(ho_BottomDianji_SortedRegions, out hv_BottomDianji_Row, out hv_BottomDianji_Column, out hv_BottomDianji_Phi, out hv_BottomDianji_Length1, out hv_BottomDianji_Length2);
-                  
+
 
                     //判断电极矩形度                               
                     HOperatorSet.Rectangularity(ho_BottomDianji_SortedRegions, out hv_BottomDianji_Rectangularity);
@@ -6114,7 +6207,7 @@ namespace SiyarSixsDetect
 
                     #region****平均宽度测量、平均宽度测量  
                     //平均宽度测量               
-                    HTuple hv_BottomDianji_AverageLength2,AverageLength2, hv_BottomDianji_AverageWidth, hv_BottomDianji_AverageHeigth;
+                    HTuple hv_BottomDianji_AverageLength2, AverageLength2, hv_BottomDianji_AverageWidth, hv_BottomDianji_AverageHeigth;
 
                     hv_BottomDianji_AverageLength2 = (hv_BottomDianji_Area / (hv_BottomDianji_Length1 * 2)) / 2;
                     AverageLength2 = hv_BottomDianji_AverageLength2 * 2 * ipix * 1000; //像素长度转换为实际距离
@@ -6126,7 +6219,7 @@ namespace SiyarSixsDetect
 
                     hv_BottomDianji_AverageLength1 = (hv_BottomDianji_Area / (hv_BottomDianji_Length2 * 2)) / 2;
                     AverageLength1 = hv_BottomDianji_AverageLength1 * 2 * ipix * 1000; //像素长度转换为实际距离
-                    hv_BottomDianji_AverageHeigth = AverageLength1;                
+                    hv_BottomDianji_AverageHeigth = AverageLength1;
 
                     //变量声明（缺陷显示）
 
@@ -6135,7 +6228,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.CountObj(ho_Region_Display, out hv_Num_Display);
                     HOperatorSet.Union1(ho_Region_Display, out ho_Union_Dispay);
                     HOperatorSet.AreaCenter(ho_Union_Dispay, out hv_Area_Display, out hv_Row_Display, out hv_Column_Display);
-                 
+
                     if ((hv_BottomDianji_AverageWidth.TupleSelect(0) < hv_iBottomDianji_Length2_Min) || (hv_BottomDianji_AverageWidth.TupleSelect(1) < hv_iBottomDianji_Length2_Min))
 
                     {
@@ -6148,7 +6241,7 @@ namespace SiyarSixsDetect
                             syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
                         }
                         //输出NG详情
-                        lsInfo2Draw.Add("电极宽度下限：" + hv_iBottomDianji_Length2_Min  + "um ");//可修改
+                        lsInfo2Draw.Add("电极宽度下限：" + hv_iBottomDianji_Length2_Min + "um ");//可修改
                         lsInfo2Draw.Add("OK");
                         lsInfo2Draw.Add("当前电极宽度：" + hv_BottomDianji_AverageLength2.TupleSelect(0).D.ToString("0.0") + "*" +
                             hv_BottomDianji_AverageLength2.TupleSelect(1).D.ToString("0.0") + " um");//可修改
@@ -6159,7 +6252,7 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
-                   
+
                     if ((hv_BottomDianji_AverageWidth.TupleSelect(0) > hv_iBottomDianji_Length2_Max) || (hv_BottomDianji_AverageWidth.TupleSelect(1) > hv_iBottomDianji_Length2_Max))
 
                     {
@@ -6172,10 +6265,10 @@ namespace SiyarSixsDetect
                             syShowRegionBorder(ho_Region_Sel, ref listObj2Draw, "NG");
                         }
                         //输出NG详情
-                        lsInfo2Draw.Add("电极宽度上限：" + hv_iBottomDianji_Length2_Min + "um ");//可修改
+                        lsInfo2Draw.Add("电极宽度上限：" + hv_iBottomDianji_Length2_Max + "um ");//可修改
                         lsInfo2Draw.Add("OK");
-                        lsInfo2Draw.Add("当前电极宽度：" + hv_BottomDianji_AverageLength2.TupleSelect(0).D.ToString("0.0") + "*" +
-                            hv_BottomDianji_AverageLength2.TupleSelect(1).D.ToString("0.0") + " um");//可修改
+                        lsInfo2Draw.Add("当前电极宽度：" + hv_BottomDianji_AverageWidth.TupleSelect(0).D.ToString("0.0") + "*" +
+                            hv_BottomDianji_AverageWidth.TupleSelect(1).D.ToString("0.0") + " um");//可修改
                         lsInfo2Draw.Add("NG");
                         listObj2Draw.Add("字符串");
                         listObj2Draw.Add(lsInfo2Draw);
@@ -6183,7 +6276,7 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
-                
+
                     if (((hv_BottomDianji_AverageWidth.TupleSelect(0) - hv_BottomDianji_AverageWidth.TupleSelect(1)).TupleAbs() > Ilenth4diff_beidianji))
 
                     {
@@ -6229,14 +6322,14 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
-                 
+
 
                     HTuple hv_BottomDianji_AverageLength2_Max, hv_BottomDianji_AverageLength2_Min, BottomDianji_Length2_Scale;
 
                     HOperatorSet.TupleMax(hv_BottomDianji_AverageWidth, out hv_BottomDianji_AverageLength2_Max);
                     HOperatorSet.TupleMin(hv_BottomDianji_AverageWidth, out hv_BottomDianji_AverageLength2_Min);
-                    BottomDianji_Length2_Scale = hv_BottomDianji_AverageLength2_Max / hv_BottomDianji_AverageLength2_Min;                                   
-                   
+                    BottomDianji_Length2_Scale = hv_BottomDianji_AverageLength2_Max / hv_BottomDianji_AverageLength2_Min;
+
                     if (BottomDianji_Length2_Scale > Length2DDD_beimian_Std)
                     {
                         #region  ****可修改
@@ -6348,7 +6441,7 @@ namespace SiyarSixsDetect
 
                     #region****电极长宽判定
                     //延锡缺陷检测
-                    HTuple hv_BootomDianji_Width , hv_BootomDianji_Height;
+                    HTuple hv_BootomDianji_Width, hv_BootomDianji_Height;
                     hv_BootomDianji_Width = hv_BottomDianji_Length2 * 2 * ipix * 1000; //像素长度转换为实际距离       
 
                     hv_BootomDianji_Height = hv_BottomDianji_Length1 * 2 * ipix * 1000; //像素长度转换为实际距离       
@@ -6408,7 +6501,7 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                         #endregion
                     }
-                   
+
                     if (((hv_BootomDianji_Width.TupleSelect(0) - hv_BootomDianji_Width.TupleSelect(1)).TupleAbs() > Ilenth4diff_beidianji))
                     {
                         #region***两电极宽度差值
@@ -6450,7 +6543,7 @@ namespace SiyarSixsDetect
 
                         strDebug += "背面电极-右电极长度:" + hv_BootomDianji_Height.TupleSelect(1).D.ToString("0.0") + "\n";
                         strDebug += "背面电极-右电极宽度:" + hv_BootomDianji_Width.TupleSelect(1).D.ToString("0.0") + "\n";
-                       
+
                         strDebug += "背面-瓷体长度:" + hv_Citi_Width.D.ToString("0.0") + "\n";
                         strDebug += "背面-瓷体宽度:" + hv_Citi_Height.D.ToString("0.0") + "\n";
 
@@ -6853,7 +6946,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.SmallestRectangle2(ho_RegionTrans, out hv_Row111, out hv_Column111, out hv_Phi, out hv_Length1_std, out hv_Length2_std);
                     HOperatorSet.GenRectangle2(out ho_Rectangle, hv_Row111, hv_Column111, hv_Phi, hv_Length1_std, hv_Length2_std);
                     ho_RegionRect2_dianji_zhengmian = ho_Rectangle;
-                    ho_RegionTrans_dianji_zhengmian = ho_RegionTrans;                         
+                    ho_RegionTrans_dianji_zhengmian = ho_RegionTrans;
 
                     #endregion
 
@@ -6960,7 +7053,7 @@ namespace SiyarSixsDetect
                     //if ((int)(new HTuple((new HTuple(hv_iLeft_Length1_Min.TupleLess(hv_Length1_Cemian.TupleSelect(0)))).TupleLess(hv_iLeft_Length1_Max))) != 0)
                     if ((int)((new HTuple(hv_iTopDianji_Length1_Min.TupleGreater(hv_TopDianji_Length1.TupleSelect(0)))).TupleOr(new HTuple(hv_TopDianji_Length1.TupleSelect(0).TupleGreater(
                               hv_iTopDianji_Length1_max)))) != 0)
-                              
+
                     {
                         #region  ****正面左边电极长度-电极不符
                         listObj2Draw[1] = "NG-电极不符";//"NG-电极长度过窄、过宽";                 
@@ -7055,9 +7148,9 @@ namespace SiyarSixsDetect
                     }
 
 
-               
 
-                    HTuple hv_TopDianji_Length2_Max,hv_TopDianji_Length2_Min, Length2DDD_Scale;
+
+                    HTuple hv_TopDianji_Length2_Max, hv_TopDianji_Length2_Min, Length2DDD_Scale;
 
                     HOperatorSet.TupleMax(hv_TopDianji_Length2, out hv_TopDianji_Length2_Max);
                     HOperatorSet.TupleMin(hv_TopDianji_Length2, out hv_TopDianji_Length2_Min);
@@ -7182,8 +7275,270 @@ namespace SiyarSixsDetect
 
 
                     #endregion
+                    ho_Region_ZiMa = ho_RegionErr;
 
+                    #region 正面漏镀检测
+                    if (A_正面漏镀检测 == 0) goto A_正面漏镀检测END;
+                 
+                    // 变量申明
+                    HObject ho_Region_loudu, ho_Region_loudu_serch, ho_RegionFillUp22;
+                    HTuple hv_parameter_louduzhengmian = new HTuple();
+
+                    HObject ho_Image_B, ho_RegionUnion2, ho_Region_zima, ho_Duanmian_Erosion1;
+                    HObject ho_Reduced_loudu, ho_SelectedRegions_loudu;
+                    HTuple hv_MeanR1, hv_MeanG1, hv_MeanB1, hv_MeanR, hv_MeanG, hv_MeanB;
+                    HTuple hv_Mean, hv_Deviation, hv_Number_loudu;
+
+                    hv_parameter_louduzhengmian = hv_parameter_louduzhengmian.TupleConcat(hv_ilouduzhengmian_thr);
+                    hv_parameter_louduzhengmian = hv_parameter_louduzhengmian.TupleConcat(hv_ilouduzhengmian_area);
+                    hv_parameter_louduzhengmian = hv_parameter_louduzhengmian.TupleConcat(hv_ilouduzhengmian_erosion);
+                 
+                    HOperatorSet.Decompose3(hoReduced, out ho_Image_R, out ho_Image_G, out ho_Image_B);
+
+                    //HOperatorSet.ErosionRectangle1(hoSelectedRegions_dianji_zhengmian, out ho_Duanmian_Erosion1,
+                    //    hv_ilouduzhengmian_erosion, hv_ilouduzhengmian_erosion);
+                    //HOperatorSet.Union1(ho_Duanmian_Erosion1, out ho_RegionUnion);
+
+                    ////ho_Region_loudu_serch = new HObject(ho_RegionUnion);
+                    //ho_Region_loudu_serch = ho_RegionUnion;
+
+
+
+                    HOperatorSet.FillUp(hoSelectedRegions_dianji_zhengmian, out ho_RegionFillUp22);
+                    HOperatorSet.ErosionRectangle1(ho_RegionFillUp22, out ho_Duanmian_Erosion1,
+                        hv_ilouduzhengmian_erosion, hv_ilouduzhengmian_erosion);
+
+                    HOperatorSet.Union1(ho_Duanmian_Erosion1, out ho_RegionUnion);
+                 
+                    ho_Region_loudu_serch = new HObject(ho_RegionUnion);
+
+
+                    //HOperatorSet.Intensity(ho_RegionUnion, ho_Image_R, out hv_Mean, out hv_Deviation);
+                    HOperatorSet.ReduceDomain(ho_Image_R, ho_Region_loudu_serch, out ho_Reduced_loudu);
+                    HOperatorSet.Threshold(ho_Reduced_loudu, out ho_Region_loudu, 0, hv_ilouduzhengmian_thr);
+                    HOperatorSet.Connection(ho_Region_loudu, out ho_ConnectedRegions);
+                    HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions_loudu,
+                        "area", "and", hv_ilouduzhengmian_area, 99999);
+
+                    ho_Region_loudu = new HObject(ho_SelectedRegions_loudu);
+
+                    HOperatorSet.CountObj(ho_SelectedRegions_loudu, out hv_Number_loudu);
+
+                    #region 调试模式
+                    if (is_Debug)
+                    {
+                        strDebug += "(1)正面漏镀-设置参数: \n";
+
+                        //strDebug += "字符-红色分量:" + hv_MeanR1.ToString() + "\n";
+                        //strDebug += "字符-绿色分量:" + hv_MeanG1.ToString() + "\n";
+                        //strDebug += "字符-蓝色分量:" + hv_MeanB1.ToString() + "\n";
+
+                        //strDebug += "电极-红色分量:" + hv_MeanR.ToString() + "\n";
+                        //strDebug += "电极-绿色分量:" + hv_MeanG.ToString() + "\n";
+                        //strDebug += "电极-蓝色分量:" + hv_MeanB.ToString() + "\n";
+
+                        if (hv_Number_loudu > 0)
+                        {
+                            strDebug += "漏镀" + "\n";
+                        }
+
+
+                    }
+                    strDebug += "\n";
+                    strMessage = DebugPrint(strDebug, is_Debug);
+                    #endregion
+
+                    //if ((int)(new HTuple(hv_NGCode.TupleGreater(0))) != 0)
+                    if ((int)(new HTuple(hv_Number_loudu.TupleGreater(0))) != 0)
+                    {
+                        #region*** NG-产品面电极-漏镀
+
+                        listObj2Draw[1] = "NG-漏镀";
+                        syShowRegionBorder(ho_Region_loudu, ref listObj2Draw, "NG");
+
+                        lsInfo2Draw.Add("NG");
+                        listObj2Draw.Add("字符串");
+                        listObj2Draw.Add(lsInfo2Draw);
+                        listObj2Draw.Add(new PointF(1800, 100));
+                        return listObj2Draw;
+
+                        #endregion
+                    }
+
+                  
+
+
+                    #endregion
+
+                    A_正面漏镀检测END:
+
+
+
+                    if (B_字码有无 == 0)
+                    {
+                        #region
+                        #region
+                        HObject ho_Rectangle1, ho_Regionrectangle2, ho_RegionUnion1, ho_RegionDifference;
+                        HObject ho_RegionDifference1, ho_Rectangle2;
+                        HTuple hv_Phi1, hv_Length11, hv_Length21;
+                        HObject ho_Region_IIG_Serch1, ho_RegionDifference2, ho_Region_IIG_Serch2;
+
+                        //**获取电极延长区域
+                        HOperatorSet.SmallestRectangle2(hoSelectedRegions_dianji_zhengmian, out hv_Row,
+                            out hv_Column, out hv_Phi, out hv_Length1, out hv_Length2);
+                        HOperatorSet.GenRectangle2(out ho_Rectangle1, hv_Row, hv_Column, hv_Phi,
+                            hv_Length1 + 50, hv_Length2);
+                        HOperatorSet.Union1(ho_Rectangle1, out ho_RegionUnion1);
+                        //**由电极区域到电阻区域
+                        ho_RegionTrans.Dispose();
+                        HOperatorSet.ShapeTrans(hoSelectedRegions_dianji_zhengmian, out ho_RegionTrans,
+                            "rectangle2");
+
+                        HOperatorSet.Union1(ho_RegionTrans, out ho_RegionUnion);
+                        HOperatorSet.ShapeTrans(ho_RegionUnion, out ho_Regionrectangle2, "rectangle2");
+
+                        //**保护层区域
+                        HOperatorSet.Difference(ho_Regionrectangle2, ho_RegionUnion1, out ho_RegionDifference );
+                      
+
+                     
+
+
+                        HOperatorSet.ErosionRectangle1(ho_RegionDifference, out ho_RegionDifference1,
+                            hv_iErosionWidth_IIG2, hv_iErosionHeight_IIG2);
+                        HOperatorSet.SmallestRectangle2(ho_RegionDifference1, out hv_Row1, out hv_Column1,
+                            out hv_Phi1, out hv_Length11, out hv_Length21);
+                        ho_Rectangle.Dispose();
+                        HOperatorSet.GenRectangle2(out ho_Rectangle, hv_Row1, hv_Column1, hv_Phi1,
+                            hv_Length11, hv_Length21);
+
+                        HOperatorSet.ErosionRectangle1(ho_RegionDifference1, out ho_Region_IIG_Serch1,
+                            EroWidth3, EroHeight3);
+
+                        HOperatorSet.Difference(ho_RegionDifference1, ho_Region_IIG_Serch1, out ho_RegionDifference2);
+                        HOperatorSet.ErosionRectangle1(ho_RegionDifference2, out ho_Region_IIG_Serch2,
+                             10, 10);
+
+
+
+
+
+
+
+
+                        HTuple hv_Parameter_IIG4 = new HTuple();
+                        hv_Parameter_IIG4 = hv_Parameter_IIG4.TupleConcat(hv_leixing);
+                        hv_Parameter_IIG4 = hv_Parameter_IIG4.TupleConcat(iProtectBrokenResThres);
+                        hv_Parameter_IIG4 = hv_Parameter_IIG4.TupleConcat(iProtectBrokenArea3);
+
+                        baohuceng_bengsui_4(ho_GrayImage, ho_Region_IIG_Serch1, out ho_RegionErr,
+               hv_Parameter_IIG4, out hv_NGCode);
+
+                        #region 调试模式
+                        if (is_Debug)
+                        {
+                            //HOperatorSet.Connection(ho_RegionDetection_IIG, out hoRegionsConn);
+                            syShowRegionBorder(ho_Region_IIG_Serch1, ref listObj2Draw, "OK");
+                            ////dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        }
+                        #endregion
+                        #region 缺陷显示（baohuceng_bengsui）
+
+                        if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
+                        {
+                            #region
+                            HOperatorSet.Union1(ho_RegionErr, out ho_RegionUnion);
+                            HOperatorSet.AreaCenter(ho_RegionUnion, out hv_Area, out hv_Row, out hv_Column);
+                            listObj2Draw[1] = "NG-保护层崩碎";
+                            HOperatorSet.Connection(ho_RegionErr, out ho_ConnectedRegions);
+                            syShowRegionBorder(ho_ConnectedRegions, ref listObj2Draw, "NG");
+
+                            //输出NG详情
+                            lsInfo2Draw.Add("(挂锡)保护层崩碎最大面积：" + iProtectBrokenArea3 + "pix ");
+                            lsInfo2Draw.Add("OK");
+                            lsInfo2Draw.Add("当前面积：" + hv_Area.D.ToString("0.0") + "pix ");
+                            lsInfo2Draw.Add("NG");
+                            listObj2Draw.Add("字符串");
+                            listObj2Draw.Add(lsInfo2Draw);
+                            listObj2Draw.Add(new PointF(1800, 100));
+                            return listObj2Draw;
+
+                            #endregion
+                        }
+
+                        #endregion
+
+
+                        HObject ho_RegionDetection_IIG5;
+
+                        HTuple hv_Parameter_IIG_5 = new HTuple();
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_leixing);
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iProtectexp);
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iProtectBrokenArea);
+
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iErosionWidth_IIG2);
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iErosionHeight_IIG2);
+
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iErrWidth);//保护层崩碎缺陷宽度
+                        hv_Parameter_IIG_5 = hv_Parameter_IIG_5.TupleConcat(hv_iErrHeight);//保护层崩碎缺陷高度
+
+                        baohuceng_bengsui_5(ho_GrayImage, ho_Region_IIG_Serch2, out ho_RegionErr,
+           hv_Parameter_IIG_5, out hv_NGCode);
+
+                        #region 调试模式
+                        if (is_Debug)
+                        {
+                            HOperatorSet.Connection(ho_Region_IIG_Serch2, out hoRegionsConn);
+                            syShowRegionBorder(hoRegionsConn, ref listObj2Draw, "NG");
+                            ////dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        }
+                        #endregion
+
+
+                        #region 缺陷显示（baohuceng_bengsui）
+
+                        if ((int)(new HTuple(hv_NGCode.TupleEqual(3))) != 0)
+                        {
+                            #region
+                            HOperatorSet.Union1(ho_RegionErr, out ho_RegionUnion);
+                            HOperatorSet.AreaCenter(ho_RegionUnion, out hv_Area, out hv_Row, out hv_Column);
+                            listObj2Draw[1] = "NG-保护层崩碎";
+                            HOperatorSet.Connection(ho_RegionErr, out ho_ConnectedRegions);
+                            syShowRegionBorder(ho_ConnectedRegions, ref listObj2Draw, "NG");
+
+                            //输出NG详情
+                            lsInfo2Draw.Add("保护层崩碎最大面积：" + hv_iProtectBrokenArea + "pix ");
+                            lsInfo2Draw.Add("OK");
+                            lsInfo2Draw.Add("当前面积：" + hv_Area.D.ToString("0.0") + "pix ");
+                            lsInfo2Draw.Add("NG");
+                            listObj2Draw.Add("字符串");
+                            listObj2Draw.Add(lsInfo2Draw);
+                            listObj2Draw.Add(new PointF(1800, 100));
+                            return listObj2Draw;
+
+                            #endregion
+                        }
+
+
+
+
+                        //HOperatorSet.GenRectangle2(out ho_Rectangle2, hv_Row1, hv_Column1, hv_Phi1, 30, 10);
+                        //ho_Region_ZiMa = new HObject(ho_Rectangle2);
+
+                        #endregion
+
+                        #endregion
+                        #endregion
+                    }
+
+
+                    if (B_字码有无 == 0) goto B_字码有无2END;
+                   
                     #region ***字码检测
+
+
 
                     #region 参数传递
                     HTuple hv_iExp_MK = 7;//需要和CreatModelMK函数中的参数对应
@@ -7205,11 +7560,10 @@ namespace SiyarSixsDetect
                     hv_Parameter_MK = hv_Parameter_MK.TupleConcat(hv_iClosing_ZIMATIQV);
                     #endregion
 
-
                     MK(ho_GrayImage, ho_ModelRegion, hoSelectedRegions_dianji_zhengmian,
-                       out ho_Region_ZiMa, out ho_RegionErr1, out ho_RegionErr2,
-                       out ho_RegionErosion, hv_ModelID, hv_ModelParam, hv_Parameter_MK
-                       , out hv_NGCode);
+                           out ho_Region_ZiMa, out ho_RegionErr1, out ho_RegionErr2,
+                           out ho_RegionErosion, hv_ModelID, hv_ModelParam, hv_Parameter_MK
+                           , out hv_NGCode);
 
 
                     #region 调试模式
@@ -7220,8 +7574,25 @@ namespace SiyarSixsDetect
                         //HOperatorSet.Connection(ho_Region_ZiMa, out hoRegionsConn);
                         //syShowRegionBorder(hoRegionsConn, ref listObj2Draw, "OK");
                         //dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                        strDebug += "正面字符-设置参数: \n";
+
+                        strDebug += "检测结果:" + hv_NGCode.ToString() + "\n";
+                        //strDebug += "字符-绿色分量:" + hv_MeanG1.ToString() + "\n";
+                        //strDebug += "字符-蓝色分量:" + hv_MeanB1.ToString() + "\n";
+
+                        //strDebug += "电极-红色分量:" + hv_MeanR.ToString() + "\n";
+                        //strDebug += "电极-绿色分量:" + hv_MeanG.ToString() + "\n";
+                        //strDebug += "电极-蓝色分量:" + hv_MeanB.ToString() + "\n";
+
+
+
+
+                        strDebug += "\n";
+                        strMessage = DebugPrint(strDebug, is_Debug);
+
                     }
-                    #endregion                   
+                    #endregion
 
                     #region 程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
@@ -7327,7 +7698,11 @@ namespace SiyarSixsDetect
 
                     #endregion
 
+
+
                     #endregion
+
+             
 
                     #region ***保护层检测                                  
 
@@ -7412,8 +7787,31 @@ namespace SiyarSixsDetect
                     HObject ho_RegionDetection_IIG;
                     #endregion
 
+
+
+
+
                     baohuceng_bengsui(ho_GrayImage, hoSelectedRegions_dianji_zhengmian,
                     ho_Region_ZiMa, out ho_RegionErr3, out ho_RegionDetection_IIG, hv_Parameter_IIG, out hv_NGCode);
+
+                    #region 调试模式
+                    if (is_Debug)
+                    {
+                        //HOperatorSet.Connection(ho_RegionDetection_IIG, out hoRegionsConn);
+                        syShowRegionBorder(ho_RegionDetection_IIG, ref listObj2Draw, "NG");
+                        ////dhDll.frmMsg.Log("背导ok" + "5555555555555" + "," + hv_NGCode.ToString(), "", null, dhDll.logDiskMode.Error, 0);
+
+                    }
+                    #endregion
+
+
+                    #endregion
+
+
+
+
+
+
 
                     #region 程序出错
                     if ((int)(new HTuple(hv_NGCode.TupleEqual(34))) != 0)
@@ -7478,11 +7876,15 @@ namespace SiyarSixsDetect
 
 
                     strMessage = DebugPrint(strDebug, is_Debug);
-                    #endregion
+                #endregion
+                B_字码有无2END:
 
                     ho_Region_return = hoSelectedRegions_dianji_zhengmian;
 
                     #endregion
+
+
+
 
                     #region ---- *** 超时处理  *** ----
 
@@ -7493,7 +7895,7 @@ namespace SiyarSixsDetect
                         return listObj2Draw;
                     }
                     #endregion
-                    #endregion
+                  
                     #endregion                
                 }// 正导
 
@@ -7636,6 +8038,749 @@ namespace SiyarSixsDetect
             else
                 return "0";
         }
+
+        public static void baohuceng_bengsui_5(HObject ho_ImageReduced, HObject ho_Region_IIG_Search,
+      out HObject ho_RegionErr3, HTuple hv_Parameter_IIG, out HTuple hv_NGCode)
+        {
+
+
+
+
+            // Local iconic variables 
+
+            HObject ho_ImageReduced_baohuceng = null, ho_ImageMean = null;
+            HObject ho_ExpImage = null, ho_ImageScaleMax = null, ho_Region = null;
+            HObject ho_RegionIntersection = null, ho_RegionOpening = null;
+            HObject ho_ConnectedRegions = null, ho_SelectedRegions = null;
+            HObject ho_SelectedRegions2 = null, ho_SelectedRegions3 = null;
+            HObject ho_SelectedRegions1 = null;
+
+            // Local control variables 
+
+            HTuple hv_leixing = new HTuple(), hv_iProtectexp = new HTuple();
+            HTuple hv_iProtectBrokenArea = new HTuple(), hv_iErosionWidth_IIG2 = new HTuple();
+            HTuple hv_iErosionHeight_IIG2 = new HTuple(), hv_iErrWidth = new HTuple();
+            HTuple hv_iErrHeight = new HTuple(), hv_Number = new HTuple();
+            HTuple hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_RegionErr3);
+            HOperatorSet.GenEmptyObj(out ho_ImageReduced_baohuceng);
+            HOperatorSet.GenEmptyObj(out ho_ImageMean);
+            HOperatorSet.GenEmptyObj(out ho_ExpImage);
+            HOperatorSet.GenEmptyObj(out ho_ImageScaleMax);
+            HOperatorSet.GenEmptyObj(out ho_Region);
+            HOperatorSet.GenEmptyObj(out ho_RegionIntersection);
+            HOperatorSet.GenEmptyObj(out ho_RegionOpening);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions2);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions3);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions1);
+            hv_NGCode = new HTuple();
+            try
+            {
+                //***IIG崩碎区域提取
+                try
+                {
+                    hv_leixing.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_leixing = hv_Parameter_IIG.TupleSelect(
+                            0);
+                    }
+                    hv_iProtectexp.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectexp = hv_Parameter_IIG.TupleSelect(
+                            1);
+                    }
+                    hv_iProtectBrokenArea.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectBrokenArea = hv_Parameter_IIG.TupleSelect(
+                            2);
+                    }
+                    hv_iErosionWidth_IIG2.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iErosionWidth_IIG2 = hv_Parameter_IIG.TupleSelect(
+                            3);
+                    }
+                    hv_iErosionHeight_IIG2.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iErosionHeight_IIG2 = hv_Parameter_IIG.TupleSelect(
+                            4);
+                    }
+
+                    hv_iErrWidth.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iErrWidth = hv_Parameter_IIG.TupleSelect(
+                            5);
+                    }
+                    hv_iErrHeight.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iErrHeight = hv_Parameter_IIG.TupleSelect(
+                            6);
+                    }
+
+
+
+
+
+
+                    ho_ImageReduced_baohuceng.Dispose();
+                    HOperatorSet.ReduceDomain(ho_ImageReduced, ho_Region_IIG_Search, out ho_ImageReduced_baohuceng
+                        );
+                    if ((int)(1) != 0)
+                    {
+
+                        ho_ImageMean.Dispose();
+                        HOperatorSet.MeanImage(ho_ImageReduced_baohuceng, out ho_ImageMean, 9,
+                            9);
+                        //exp_image (ImageReduced_baohuceng, ExpImage, iProtectexp)
+                        //exp_image (ImageMean, ExpImage, 30)
+                        ho_ExpImage.Dispose();
+                        HOperatorSet.ExpImage(ho_ImageMean, out ho_ExpImage, hv_iProtectexp);
+                        ho_ImageScaleMax.Dispose();
+                        HOperatorSet.ScaleImageMax(ho_ExpImage, out ho_ImageScaleMax);
+                        ho_Region.Dispose();
+                        HOperatorSet.Threshold(ho_ImageScaleMax, out ho_Region, 200, 255);
+
+                        ho_RegionIntersection.Dispose();
+                        HOperatorSet.Intersection(ho_Region, ho_Region_IIG_Search, out ho_RegionIntersection
+                            );
+                        ho_RegionOpening.Dispose();
+                        HOperatorSet.OpeningCircle(ho_RegionIntersection, out ho_RegionOpening,
+                            3.5);
+
+
+
+                        ho_ConnectedRegions.Dispose();
+                        HOperatorSet.Connection(ho_RegionOpening, out ho_ConnectedRegions);
+                        ho_SelectedRegions.Dispose();
+                        HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions, "anisometry",
+                            "and", 0, 15);
+
+                        ho_SelectedRegions2.Dispose();
+                        HOperatorSet.SelectShape(ho_SelectedRegions, out ho_SelectedRegions2, "width",
+                            "and", hv_iErrWidth, 99999);
+                        ho_SelectedRegions3.Dispose();
+                        HOperatorSet.SelectShape(ho_SelectedRegions2, out ho_SelectedRegions3,
+                            "height", "and", hv_iErrHeight, 99999);
+                        ho_SelectedRegions1.Dispose();
+                        HOperatorSet.SelectShape(ho_SelectedRegions3, out ho_SelectedRegions1,
+                            "area", "and", hv_iProtectBrokenArea, 99999);
+
+
+
+                        hv_Number.Dispose();
+                        HOperatorSet.CountObj(ho_SelectedRegions1, out hv_Number);
+                        ho_RegionErr3.Dispose();
+                        ho_RegionErr3 = new HObject(ho_SelectedRegions1);
+
+                        if ((int)(new HTuple(hv_Number.TupleGreater(0))) != 0)
+                        {
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 3;
+                            ho_ImageReduced_baohuceng.Dispose();
+                            ho_ImageMean.Dispose();
+                            ho_ExpImage.Dispose();
+                            ho_ImageScaleMax.Dispose();
+                            ho_Region.Dispose();
+                            ho_RegionIntersection.Dispose();
+                            ho_RegionOpening.Dispose();
+                            ho_ConnectedRegions.Dispose();
+                            ho_SelectedRegions.Dispose();
+                            ho_SelectedRegions2.Dispose();
+                            ho_SelectedRegions3.Dispose();
+                            ho_SelectedRegions1.Dispose();
+
+                            hv_leixing.Dispose();
+                            hv_iProtectexp.Dispose();
+                            hv_iProtectBrokenArea.Dispose();
+                            hv_iErosionWidth_IIG2.Dispose();
+                            hv_iErosionHeight_IIG2.Dispose();
+                            hv_iErrWidth.Dispose();
+                            hv_iErrHeight.Dispose();
+                            hv_Number.Dispose();
+                            hv_exc.Dispose();
+
+                            return;
+                        }
+                    }
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionIntersection.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions2.Dispose();
+                ho_SelectedRegions3.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_iErosionWidth_IIG2.Dispose();
+                hv_iErosionHeight_IIG2.Dispose();
+                hv_iErrWidth.Dispose();
+                hv_iErrHeight.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionIntersection.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions2.Dispose();
+                ho_SelectedRegions3.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_iErosionWidth_IIG2.Dispose();
+                hv_iErosionHeight_IIG2.Dispose();
+                hv_iErrWidth.Dispose();
+                hv_iErrHeight.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
+
+        public static void baohuceng_bengsui_4(HObject ho_ImageReduced, HObject ho_Region_IIG_Search,
+      out HObject ho_RegionErr, HTuple hv_Parameter_IIG, out HTuple hv_NGCode)
+        {
+
+
+
+
+            // Local iconic variables 
+
+            HObject ho_ImageReduced_baohuceng = null, ho_ImageMean = null;
+            HObject ho_ExpImage = null, ho_ImageScaleMax = null, ho_Region = null;
+            HObject ho_RegionOpening = null, ho_ConnectedRegions = null;
+            HObject ho_SelectedRegions = null, ho_SelectedRegions1 = null;
+
+            // Local control variables 
+
+            HTuple hv_leixing = new HTuple(), hv_iProtectexp = new HTuple();
+            HTuple hv_iProtectBrokenArea = new HTuple(), hv_Number = new HTuple();
+            HTuple hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_RegionErr);
+            HOperatorSet.GenEmptyObj(out ho_ImageReduced_baohuceng);
+            HOperatorSet.GenEmptyObj(out ho_ImageMean);
+            HOperatorSet.GenEmptyObj(out ho_ExpImage);
+            HOperatorSet.GenEmptyObj(out ho_ImageScaleMax);
+            HOperatorSet.GenEmptyObj(out ho_Region);
+            HOperatorSet.GenEmptyObj(out ho_RegionOpening);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions1);
+            hv_NGCode = new HTuple();
+            try
+            {
+                //***IIG崩碎区域提取
+                try
+                {
+                    hv_leixing.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_leixing = hv_Parameter_IIG.TupleSelect(
+                            0);
+                    }
+                    hv_iProtectexp.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectexp = hv_Parameter_IIG.TupleSelect(
+                            1);
+                    }
+                    hv_iProtectBrokenArea.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectBrokenArea = hv_Parameter_IIG.TupleSelect(
+                            2);
+                    }
+
+
+                    ho_ImageReduced_baohuceng.Dispose();
+                    HOperatorSet.ReduceDomain(ho_ImageReduced, ho_Region_IIG_Search, out ho_ImageReduced_baohuceng
+                        );
+
+
+
+                    if ((int)(1) != 0)
+                    {
+
+                        ho_ImageMean.Dispose();
+                        HOperatorSet.MeanImage(ho_ImageReduced_baohuceng, out ho_ImageMean, 9,
+                            9);
+                        //exp_image (ImageReduced_baohuceng, ExpImage, iProtectexp)
+                        ho_ExpImage.Dispose();
+                        HOperatorSet.ExpImage(ho_ImageMean, out ho_ExpImage, hv_iProtectexp);
+                        ho_ImageScaleMax.Dispose();
+                        HOperatorSet.ScaleImageMax(ho_ExpImage, out ho_ImageScaleMax);
+
+
+                        ho_Region.Dispose();
+                        HOperatorSet.Threshold(ho_ImageScaleMax, out ho_Region, 200, 255);
+                        ho_RegionOpening.Dispose();
+                        HOperatorSet.OpeningCircle(ho_Region, out ho_RegionOpening, 3.5);
+
+                        ho_ConnectedRegions.Dispose();
+                        HOperatorSet.Connection(ho_RegionOpening, out ho_ConnectedRegions);
+                        ho_SelectedRegions.Dispose();
+                        HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions, "anisometry",
+                            "and", 0, 15);
+                        ho_SelectedRegions1.Dispose();
+                        HOperatorSet.SelectShape(ho_SelectedRegions, out ho_SelectedRegions1, "area",
+                            "and", hv_iProtectBrokenArea, 99999);
+                        hv_Number.Dispose();
+                        HOperatorSet.CountObj(ho_SelectedRegions1, out hv_Number);
+                        ho_RegionErr.Dispose();
+                        ho_RegionErr = new HObject(ho_SelectedRegions1);
+
+                        if ((int)(new HTuple(hv_Number.TupleGreater(0))) != 0)
+                        {
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 3;
+                            ho_ImageReduced_baohuceng.Dispose();
+                            ho_ImageMean.Dispose();
+                            ho_ExpImage.Dispose();
+                            ho_ImageScaleMax.Dispose();
+                            ho_Region.Dispose();
+                            ho_RegionOpening.Dispose();
+                            ho_ConnectedRegions.Dispose();
+                            ho_SelectedRegions.Dispose();
+                            ho_SelectedRegions1.Dispose();
+
+                            hv_leixing.Dispose();
+                            hv_iProtectexp.Dispose();
+                            hv_iProtectBrokenArea.Dispose();
+                            hv_Number.Dispose();
+                            hv_exc.Dispose();
+
+                            return;
+                        }
+                    }
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
+
+
+
+        public static void baohuceng_bengsui_3(HObject ho_ImageReduced, HObject ho_Region_dianji_zhengmian,
+      HObject ho_Region_zima, out HObject ho_RegionErr3, out HObject ho_RegionDetection_IIG,
+      HTuple hv_Parameter_IIG, out HTuple hv_NGCode)
+        {
+
+
+
+
+            // Local iconic variables 
+
+            HObject ho_UnionMK = null, ho_Rectangle = null;
+            HObject ho_Rectangle1 = null, ho_RegionUnion = null, ho_RegionTrans = null;
+            HObject ho_Rectangle_chanpin = null, ho_RegionTrans1 = null;
+            HObject ho_RegionClosing = null, ho_RegionDifference1 = null;
+            HObject ho_RegionTrans2 = null, ho_RegionDilation = null, ho_RegionDifference4 = null;
+            HObject ho_RegionIntersection = null, ho_RegionErosion = null;
+            HObject ho_ImageReduced_baohuceng = null, ho_ImageMean = null;
+            HObject ho_ExpImage = null, ho_ImageScaleMax = null, ho_Region = null;
+            HObject ho_RegionOpening = null, ho_ConnectedRegions = null;
+            HObject ho_SelectedRegions = null, ho_SelectedRegions1 = null;
+
+            // Local copy input parameter variables 
+            HObject ho_Region_zima_COPY_INP_TMP;
+            ho_Region_zima_COPY_INP_TMP = new HObject(ho_Region_zima);
+
+
+
+            // Local control variables 
+
+            HTuple hv_leixing = new HTuple(), hv_iProtectexp = new HTuple();
+            HTuple hv_iProtectBrokenArea = new HTuple(), hv_Row = new HTuple();
+            HTuple hv_Column = new HTuple(), hv_Phi = new HTuple();
+            HTuple hv_Length1 = new HTuple(), hv_Length2 = new HTuple();
+            HTuple hv_Row1 = new HTuple(), hv_Column1 = new HTuple();
+            HTuple hv_Phi1 = new HTuple(), hv_Length11 = new HTuple();
+            HTuple hv_Length21 = new HTuple(), hv_Number = new HTuple();
+            HTuple hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_RegionErr3);
+            HOperatorSet.GenEmptyObj(out ho_RegionDetection_IIG);
+            HOperatorSet.GenEmptyObj(out ho_UnionMK);
+            HOperatorSet.GenEmptyObj(out ho_Rectangle);
+            HOperatorSet.GenEmptyObj(out ho_Rectangle1);
+            HOperatorSet.GenEmptyObj(out ho_RegionUnion);
+            HOperatorSet.GenEmptyObj(out ho_RegionTrans);
+            HOperatorSet.GenEmptyObj(out ho_Rectangle_chanpin);
+            HOperatorSet.GenEmptyObj(out ho_RegionTrans1);
+            HOperatorSet.GenEmptyObj(out ho_RegionClosing);
+            HOperatorSet.GenEmptyObj(out ho_RegionDifference1);
+            HOperatorSet.GenEmptyObj(out ho_RegionTrans2);
+            HOperatorSet.GenEmptyObj(out ho_RegionDilation);
+            HOperatorSet.GenEmptyObj(out ho_RegionDifference4);
+            HOperatorSet.GenEmptyObj(out ho_RegionIntersection);
+            HOperatorSet.GenEmptyObj(out ho_RegionErosion);
+            HOperatorSet.GenEmptyObj(out ho_ImageReduced_baohuceng);
+            HOperatorSet.GenEmptyObj(out ho_ImageMean);
+            HOperatorSet.GenEmptyObj(out ho_ExpImage);
+            HOperatorSet.GenEmptyObj(out ho_ImageScaleMax);
+            HOperatorSet.GenEmptyObj(out ho_Region);
+            HOperatorSet.GenEmptyObj(out ho_RegionOpening);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions1);
+            hv_NGCode = new HTuple();
+            try
+            {
+                //***IIG崩碎区域提取
+                try
+                {
+                    hv_leixing.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_leixing = hv_Parameter_IIG.TupleSelect(
+                            0);
+                    }
+                    hv_iProtectexp.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectexp = hv_Parameter_IIG.TupleSelect(
+                            1);
+                    }
+                    hv_iProtectBrokenArea.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iProtectBrokenArea = hv_Parameter_IIG.TupleSelect(
+                            2);
+                    }
+
+
+                    ho_UnionMK.Dispose();
+                    HOperatorSet.Union1(ho_Region_zima_COPY_INP_TMP, out ho_UnionMK);
+                    ho_Region_zima_COPY_INP_TMP.Dispose();
+                    ho_Region_zima_COPY_INP_TMP = new HObject(ho_UnionMK);
+
+                    //**获取电极延长区域
+                    hv_Row.Dispose(); hv_Column.Dispose(); hv_Phi.Dispose(); hv_Length1.Dispose(); hv_Length2.Dispose();
+                    HOperatorSet.SmallestRectangle2(ho_Region_dianji_zhengmian, out hv_Row, out hv_Column,
+                        out hv_Phi, out hv_Length1, out hv_Length2);
+                    ho_Rectangle.Dispose();
+                    HOperatorSet.GenRectangle2(out ho_Rectangle, hv_Row, hv_Column, hv_Phi, hv_Length1,
+                        hv_Length2);
+                    ho_Rectangle1.Dispose();
+                    HOperatorSet.GenRectangle2(out ho_Rectangle1, hv_Row, hv_Column, hv_Phi,
+                        hv_Length1 + 50, hv_Length2);
+
+                    //**获取产品区域
+                    ho_RegionUnion.Dispose();
+                    HOperatorSet.Union1(ho_Region_dianji_zhengmian, out ho_RegionUnion);
+                    ho_RegionTrans.Dispose();
+                    HOperatorSet.ShapeTrans(ho_RegionUnion, out ho_RegionTrans, "convex");
+                    hv_Row1.Dispose(); hv_Column1.Dispose(); hv_Phi1.Dispose(); hv_Length11.Dispose(); hv_Length21.Dispose();
+                    HOperatorSet.SmallestRectangle2(ho_RegionTrans, out hv_Row1, out hv_Column1,
+                        out hv_Phi1, out hv_Length11, out hv_Length21);
+                    ho_Rectangle_chanpin.Dispose();
+                    HOperatorSet.GenRectangle2(out ho_Rectangle_chanpin, hv_Row1, hv_Column1,
+                        hv_Phi1, hv_Length11, hv_Length21);
+
+
+
+
+                    ho_RegionTrans1.Dispose();
+                    HOperatorSet.ShapeTrans(ho_Region_dianji_zhengmian, out ho_RegionTrans1,
+                        "convex");
+                    ho_RegionClosing.Dispose();
+                    HOperatorSet.ClosingCircle(ho_Region_dianji_zhengmian, out ho_RegionClosing,
+                        5);
+
+                    ho_RegionDifference1.Dispose();
+                    HOperatorSet.Difference(ho_Rectangle_chanpin, ho_Rectangle1, out ho_RegionDifference1
+                        );
+
+                    ho_RegionTrans2.Dispose();
+                    HOperatorSet.ShapeTrans(ho_Region_zima_COPY_INP_TMP, out ho_RegionTrans2,
+                        "rectangle2");
+                    ho_RegionDilation.Dispose();
+                    HOperatorSet.DilationRectangle1(ho_RegionTrans2, out ho_RegionDilation, 500,
+                        1);
+
+                    ho_RegionDifference4.Dispose();
+                    HOperatorSet.Difference(ho_RegionDilation, ho_Region_zima_COPY_INP_TMP, out ho_RegionDifference4
+                        );
+                    ho_RegionIntersection.Dispose();
+                    HOperatorSet.Intersection(ho_RegionDifference4, ho_RegionDifference1, out ho_RegionIntersection
+                        );
+
+
+                    //difference (RegionDifference1, RegionDilation, RegionDifference2)
+                    //difference (RegionDifference1, RegionDifference2, RegionDifference)
+                    //difference (RegionDifference, Region_zima, RegionDifference3)
+                    //erosion_rectangle1 (RegionDifference3, RegionErosion, 10, 1)
+
+                    ho_RegionErosion.Dispose();
+                    HOperatorSet.ErosionRectangle1(ho_RegionIntersection, out ho_RegionErosion,
+                        10, 1);
+                    ho_RegionDetection_IIG.Dispose();
+                    ho_RegionDetection_IIG = new HObject(ho_RegionErosion);
+                    ho_ImageReduced_baohuceng.Dispose();
+                    HOperatorSet.ReduceDomain(ho_ImageReduced, ho_Region_zima_COPY_INP_TMP, out ho_ImageReduced_baohuceng
+                        );
+
+                    //RegionDetection_IIG := RegionErosion
+
+                    if ((int)(1) != 0)
+                    {
+
+                        ho_ImageMean.Dispose();
+                        HOperatorSet.MeanImage(ho_ImageReduced_baohuceng, out ho_ImageMean, 9,
+                            9);
+                        //exp_image (ImageReduced_baohuceng, ExpImage, iProtectexp)
+                        ho_ExpImage.Dispose();
+                        HOperatorSet.ExpImage(ho_ImageMean, out ho_ExpImage, hv_iProtectexp);
+                        ho_ImageScaleMax.Dispose();
+                        HOperatorSet.ScaleImageMax(ho_ExpImage, out ho_ImageScaleMax);
+
+
+                        ho_Region.Dispose();
+                        HOperatorSet.Threshold(ho_ImageScaleMax, out ho_Region, 200, 255);
+                        ho_RegionOpening.Dispose();
+                        HOperatorSet.OpeningCircle(ho_Region, out ho_RegionOpening, 3.5);
+
+                        ho_ConnectedRegions.Dispose();
+                        HOperatorSet.Connection(ho_RegionOpening, out ho_ConnectedRegions);
+                        ho_SelectedRegions.Dispose();
+                        HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions, "anisometry",
+                            "and", 0, 15);
+                        ho_SelectedRegions1.Dispose();
+                        HOperatorSet.SelectShape(ho_SelectedRegions, out ho_SelectedRegions1, "area",
+                            "and", hv_iProtectBrokenArea, 99999);
+                        hv_Number.Dispose();
+                        HOperatorSet.CountObj(ho_SelectedRegions1, out hv_Number);
+                        ho_RegionErr3.Dispose();
+                        ho_RegionErr3 = new HObject(ho_SelectedRegions1);
+
+                        if ((int)(new HTuple(hv_Number.TupleGreater(0))) != 0)
+                        {
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 3;
+                            ho_Region_zima_COPY_INP_TMP.Dispose();
+                            ho_UnionMK.Dispose();
+                            ho_Rectangle.Dispose();
+                            ho_Rectangle1.Dispose();
+                            ho_RegionUnion.Dispose();
+                            ho_RegionTrans.Dispose();
+                            ho_Rectangle_chanpin.Dispose();
+                            ho_RegionTrans1.Dispose();
+                            ho_RegionClosing.Dispose();
+                            ho_RegionDifference1.Dispose();
+                            ho_RegionTrans2.Dispose();
+                            ho_RegionDilation.Dispose();
+                            ho_RegionDifference4.Dispose();
+                            ho_RegionIntersection.Dispose();
+                            ho_RegionErosion.Dispose();
+                            ho_ImageReduced_baohuceng.Dispose();
+                            ho_ImageMean.Dispose();
+                            ho_ExpImage.Dispose();
+                            ho_ImageScaleMax.Dispose();
+                            ho_Region.Dispose();
+                            ho_RegionOpening.Dispose();
+                            ho_ConnectedRegions.Dispose();
+                            ho_SelectedRegions.Dispose();
+                            ho_SelectedRegions1.Dispose();
+
+                            hv_leixing.Dispose();
+                            hv_iProtectexp.Dispose();
+                            hv_iProtectBrokenArea.Dispose();
+                            hv_Row.Dispose();
+                            hv_Column.Dispose();
+                            hv_Phi.Dispose();
+                            hv_Length1.Dispose();
+                            hv_Length2.Dispose();
+                            hv_Row1.Dispose();
+                            hv_Column1.Dispose();
+                            hv_Phi1.Dispose();
+                            hv_Length11.Dispose();
+                            hv_Length21.Dispose();
+                            hv_Number.Dispose();
+                            hv_exc.Dispose();
+
+                            return;
+                        }
+                    }
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+                ho_Region_zima_COPY_INP_TMP.Dispose();
+                ho_UnionMK.Dispose();
+                ho_Rectangle.Dispose();
+                ho_Rectangle1.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_RegionTrans.Dispose();
+                ho_Rectangle_chanpin.Dispose();
+                ho_RegionTrans1.Dispose();
+                ho_RegionClosing.Dispose();
+                ho_RegionDifference1.Dispose();
+                ho_RegionTrans2.Dispose();
+                ho_RegionDilation.Dispose();
+                ho_RegionDifference4.Dispose();
+                ho_RegionIntersection.Dispose();
+                ho_RegionErosion.Dispose();
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_Row.Dispose();
+                hv_Column.Dispose();
+                hv_Phi.Dispose();
+                hv_Length1.Dispose();
+                hv_Length2.Dispose();
+                hv_Row1.Dispose();
+                hv_Column1.Dispose();
+                hv_Phi1.Dispose();
+                hv_Length11.Dispose();
+                hv_Length21.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_Region_zima_COPY_INP_TMP.Dispose();
+                ho_UnionMK.Dispose();
+                ho_Rectangle.Dispose();
+                ho_Rectangle1.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_RegionTrans.Dispose();
+                ho_Rectangle_chanpin.Dispose();
+                ho_RegionTrans1.Dispose();
+                ho_RegionClosing.Dispose();
+                ho_RegionDifference1.Dispose();
+                ho_RegionTrans2.Dispose();
+                ho_RegionDilation.Dispose();
+                ho_RegionDifference4.Dispose();
+                ho_RegionIntersection.Dispose();
+                ho_RegionErosion.Dispose();
+                ho_ImageReduced_baohuceng.Dispose();
+                ho_ImageMean.Dispose();
+                ho_ExpImage.Dispose();
+                ho_ImageScaleMax.Dispose();
+                ho_Region.Dispose();
+                ho_RegionOpening.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_leixing.Dispose();
+                hv_iProtectexp.Dispose();
+                hv_iProtectBrokenArea.Dispose();
+                hv_Row.Dispose();
+                hv_Column.Dispose();
+                hv_Phi.Dispose();
+                hv_Length1.Dispose();
+                hv_Length2.Dispose();
+                hv_Row1.Dispose();
+                hv_Column1.Dispose();
+                hv_Phi1.Dispose();
+                hv_Length11.Dispose();
+                hv_Length21.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
+
 
 
         public static void Detect_loudu_12(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_loudu,
@@ -7788,7 +8933,230 @@ namespace SiyarSixsDetect
             }
         }
 
+        public static void loudu_zhengmian(HObject ho_Image, HObject ho_Region_Dianji, HObject ho_Region_zima,
+      out HObject ho_Region_loudu, out HObject ho_Region_loudu_serch, HTuple hv_parameter,
+      out HTuple hv_NGCode)
+        {
 
+
+
+
+            // Local iconic variables 
+
+            HObject ho_Image_R = null, ho_Image_G = null, ho_Image_B = null;
+            HObject ho_RegionUnion2 = null, ho_Duanmian_Erosion1 = null;
+            HObject ho_RegionUnion = null, ho_Reduced_loudu = null, ho_ConnectedRegions = null;
+            HObject ho_SelectedRegions_loudu = null;
+
+            // Local control variables 
+
+            HTuple hv_iloudu_thr = new HTuple(), hv_iloudu_area = new HTuple();
+            HTuple hv_iloudu_erosion = new HTuple(), hv_Mean = new HTuple();
+            HTuple hv_Deviation = new HTuple(), hv_MeanR1 = new HTuple();
+            HTuple hv_MeanG1 = new HTuple(), hv_MeanB1 = new HTuple();
+            HTuple hv_MeanR = new HTuple(), hv_MeanG = new HTuple();
+            HTuple hv_MeanB = new HTuple(), hv_Number_loudu = new HTuple();
+            HTuple hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_Region_loudu);
+            HOperatorSet.GenEmptyObj(out ho_Region_loudu_serch);
+            HOperatorSet.GenEmptyObj(out ho_Image_R);
+            HOperatorSet.GenEmptyObj(out ho_Image_G);
+            HOperatorSet.GenEmptyObj(out ho_Image_B);
+            HOperatorSet.GenEmptyObj(out ho_RegionUnion2);
+            HOperatorSet.GenEmptyObj(out ho_Duanmian_Erosion1);
+            HOperatorSet.GenEmptyObj(out ho_RegionUnion);
+            HOperatorSet.GenEmptyObj(out ho_Reduced_loudu);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions_loudu);
+            hv_NGCode = new HTuple();
+            try
+            {
+
+
+                try
+                {
+
+                    //**漏镀检测
+                    hv_iloudu_thr.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_thr = hv_parameter.TupleSelect(
+                            0);
+                    }
+                    hv_iloudu_area.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_area = hv_parameter.TupleSelect(
+                            1);
+                    }
+                    hv_iloudu_erosion.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iloudu_erosion = hv_parameter.TupleSelect(
+                            2);
+                    }
+
+                    //***端面漏镀检测
+                    ho_Image_R.Dispose(); ho_Image_G.Dispose(); ho_Image_B.Dispose();
+                    HOperatorSet.Decompose3(ho_Image, out ho_Image_R, out ho_Image_G, out ho_Image_B
+                        );
+                    //intensity (Region_Duanmian, Image_R, Mean, Deviation)
+
+
+                    ho_RegionUnion2.Dispose();
+                    HOperatorSet.Union1(ho_Region_zima, out ho_RegionUnion2);
+                    hv_MeanR1.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion2, ho_Image_R, out hv_MeanR1, out hv_Deviation);
+                    hv_MeanG1.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion2, ho_Image_G, out hv_MeanG1, out hv_Deviation);
+                    hv_MeanB1.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion2, ho_Image_B, out hv_MeanB1, out hv_Deviation);
+
+
+                    ho_Duanmian_Erosion1.Dispose();
+                    HOperatorSet.ErosionRectangle1(ho_Region_Dianji, out ho_Duanmian_Erosion1,
+                        hv_iloudu_erosion, hv_iloudu_erosion);
+                    ho_RegionUnion.Dispose();
+                    HOperatorSet.Union1(ho_Duanmian_Erosion1, out ho_RegionUnion);
+                    ho_Region_loudu_serch.Dispose();
+                    ho_Region_loudu_serch = new HObject(ho_RegionUnion);
+                    hv_MeanR.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion, ho_Image_R, out hv_MeanR, out hv_Deviation);
+                    hv_MeanG.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion, ho_Image_G, out hv_MeanG, out hv_Deviation);
+                    hv_MeanB.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion, ho_Image_B, out hv_MeanB, out hv_Deviation);
+
+
+
+                    ho_Duanmian_Erosion1.Dispose();
+                    HOperatorSet.ErosionRectangle1(ho_Region_Dianji, out ho_Duanmian_Erosion1,
+                        hv_iloudu_erosion, hv_iloudu_erosion);
+                    ho_RegionUnion.Dispose();
+                    HOperatorSet.Union1(ho_Duanmian_Erosion1, out ho_RegionUnion);
+                    ho_Region_loudu_serch.Dispose();
+                    ho_Region_loudu_serch = new HObject(ho_RegionUnion);
+
+                    hv_Mean.Dispose(); hv_Deviation.Dispose();
+                    HOperatorSet.Intensity(ho_RegionUnion, ho_Image_R, out hv_Mean, out hv_Deviation);
+
+                    //*     intensity (Region_citi, Image_R, Mean3, Deviation)
+
+                    ho_Reduced_loudu.Dispose();
+                    HOperatorSet.ReduceDomain(ho_Image_R, ho_Region_loudu_serch, out ho_Reduced_loudu
+                        );
+                    ho_Region_loudu.Dispose();
+                    HOperatorSet.Threshold(ho_Reduced_loudu, out ho_Region_loudu, 0, hv_iloudu_thr);
+                    ho_ConnectedRegions.Dispose();
+                    HOperatorSet.Connection(ho_Region_loudu, out ho_ConnectedRegions);
+                    ho_SelectedRegions_loudu.Dispose();
+                    HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions_loudu,
+                        "area", "and", hv_iloudu_area, 99999);
+                    ho_Region_loudu.Dispose();
+                    ho_Region_loudu = new HObject(ho_SelectedRegions_loudu);
+                    hv_Number_loudu.Dispose();
+                    HOperatorSet.CountObj(ho_SelectedRegions_loudu, out hv_Number_loudu);
+
+                    if ((int)(new HTuple(hv_Number_loudu.TupleGreater(0))) != 0)
+                    {
+                        hv_NGCode.Dispose();
+                        hv_NGCode = 40;
+                        ho_Image_R.Dispose();
+                        ho_Image_G.Dispose();
+                        ho_Image_B.Dispose();
+                        ho_RegionUnion2.Dispose();
+                        ho_Duanmian_Erosion1.Dispose();
+                        ho_RegionUnion.Dispose();
+                        ho_Reduced_loudu.Dispose();
+                        ho_ConnectedRegions.Dispose();
+                        ho_SelectedRegions_loudu.Dispose();
+
+                        hv_iloudu_thr.Dispose();
+                        hv_iloudu_area.Dispose();
+                        hv_iloudu_erosion.Dispose();
+                        hv_Mean.Dispose();
+                        hv_Deviation.Dispose();
+                        hv_MeanR1.Dispose();
+                        hv_MeanG1.Dispose();
+                        hv_MeanB1.Dispose();
+                        hv_MeanR.Dispose();
+                        hv_MeanG.Dispose();
+                        hv_MeanB.Dispose();
+                        hv_Number_loudu.Dispose();
+                        hv_exc.Dispose();
+
+                        return;
+                    }
+
+
+
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+
+                ho_Image_R.Dispose();
+                ho_Image_G.Dispose();
+                ho_Image_B.Dispose();
+                ho_RegionUnion2.Dispose();
+                ho_Duanmian_Erosion1.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_Reduced_loudu.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions_loudu.Dispose();
+
+                hv_iloudu_thr.Dispose();
+                hv_iloudu_area.Dispose();
+                hv_iloudu_erosion.Dispose();
+                hv_Mean.Dispose();
+                hv_Deviation.Dispose();
+                hv_MeanR1.Dispose();
+                hv_MeanG1.Dispose();
+                hv_MeanB1.Dispose();
+                hv_MeanR.Dispose();
+                hv_MeanG.Dispose();
+                hv_MeanB.Dispose();
+                hv_Number_loudu.Dispose();
+                hv_exc.Dispose();
+
+                return;
+
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_Image_R.Dispose();
+                ho_Image_G.Dispose();
+                ho_Image_B.Dispose();
+                ho_RegionUnion2.Dispose();
+                ho_Duanmian_Erosion1.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_Reduced_loudu.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_SelectedRegions_loudu.Dispose();
+
+                hv_iloudu_thr.Dispose();
+                hv_iloudu_area.Dispose();
+                hv_iloudu_erosion.Dispose();
+                hv_Mean.Dispose();
+                hv_Deviation.Dispose();
+                hv_MeanR1.Dispose();
+                hv_MeanG1.Dispose();
+                hv_MeanB1.Dispose();
+                hv_MeanR.Dispose();
+                hv_MeanG.Dispose();
+                hv_MeanB.Dispose();
+                hv_Number_loudu.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
 
 
 
@@ -9164,7 +10532,7 @@ namespace SiyarSixsDetect
             }
         }
 
-        public static void Detect_Err_12(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_Err2,
+        public static void  Detect_Err_12(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_Err2,
       HTuple hv_parameter, out HTuple hv_NGCode)
         {
 
@@ -9252,18 +10620,49 @@ namespace SiyarSixsDetect
                             17);
                     }
 
+                    //iSobelThr := parameter[21]
+                    //iSobelClosing1 := parameter[22]
+                    //iSobelClosing2 := parameter[23]
+                    //iSobelArea := parameter[24]
 
 
                     ho_GrayImage1.Dispose();
                     HOperatorSet.Rgb1ToGray(ho_Image, out ho_GrayImage1);
                     //decompose3 (Image, Image1, Image2, Image3)
-                    //*     GrayImage1 := Image2
+                    //GrayImage1 := Image2
                     ho_RegionErosion.Dispose();
                     HOperatorSet.ErosionRectangle1(ho_Region_Duanmian, out ho_RegionErosion,
                         hv_iErosionRect1, hv_iErosionRect1);
                     ho_ImageReduced.Dispose();
                     HOperatorSet.ReduceDomain(ho_Image, ho_RegionErosion, out ho_ImageReduced
                         );
+
+                    //if (iThr2)
+                    //decompose3 (Image, Image1, Image2, Image3)
+                    //*         GrayImage1 := Image2
+                    //sobel_amp (ImageReduced, EdgeAmplitude, 'sum_abs', 3)
+                    //*         threshold (EdgeAmplitude, Region, iSobelThr, 255)
+                    //connection (Region, ConnectedRegions)
+
+                    //*         closing_circle (Region, RegionClosing1, iSobelClosing1)
+                    //*         connection (RegionClosing1, ConnectedRegions)
+                    //*         union1 (ConnectedRegions, RegionUnion)
+                    //*         difference (RegionErosion, RegionUnion, RegionDifference)
+                    //*         connection (RegionDifference, ConnectedRegions2)
+                    //*         closing_circle (ConnectedRegions2, RegionClosing2, iSobelClosing2)
+                    //*         select_shape (RegionClosing2, SelectedRegions1, 'area', 'and', iSobelArea, 99999)
+                    //*         count_obj (SelectedRegions1, Number)
+                    //*         if (Number > 0)
+                    //*         Region_Err2 := SelectedRegions1
+
+                    //NGCode := 4
+                    //return ()
+                    //*         endif
+                    //endif
+
+
+
+
 
                     ho_ImageMean1.Dispose();
                     HOperatorSet.MeanImage(ho_ImageReduced, out ho_ImageMean1, 3, 3);
@@ -9388,6 +10787,211 @@ namespace SiyarSixsDetect
                 hv_iThr2.Dispose();
                 hv_UsedThreshold.Dispose();
                 hv_Number1.Dispose();
+                hv_exc.Dispose();
+
+                throw HDevExpDefaultException;
+            }
+        }
+
+        public static void Detect_Err_Sobel(HObject ho_Image, HObject ho_Region_Duanmian, out HObject ho_Region_Err2,
+      HTuple hv_parameter, out HTuple hv_NGCode)
+        {
+
+
+
+
+            // Local iconic variables 
+
+            HObject ho_GrayImage1 = null, ho_RegionErosion = null;
+            HObject ho_ImageReduced = null, ho_EdgeAmplitude = null, ho_Region = null;
+            HObject ho_RegionClosing1 = null, ho_ConnectedRegions = null;
+            HObject ho_RegionUnion = null, ho_RegionDifference = null, ho_ConnectedRegions2 = null;
+            HObject ho_RegionClosing2 = null, ho_SelectedRegions1 = null;
+
+            // Local control variables 
+
+            HTuple hv_iSobelThr = new HTuple(), hv_iSobelClosing1 = new HTuple();
+            HTuple hv_iSobelClosing2 = new HTuple(), hv_iSobelArea = new HTuple();
+            HTuple hv_Number = new HTuple(), hv_exc = new HTuple();
+            // Initialize local and output iconic variables 
+            HOperatorSet.GenEmptyObj(out ho_Region_Err2);
+            HOperatorSet.GenEmptyObj(out ho_GrayImage1);
+            HOperatorSet.GenEmptyObj(out ho_RegionErosion);
+            HOperatorSet.GenEmptyObj(out ho_ImageReduced);
+            HOperatorSet.GenEmptyObj(out ho_EdgeAmplitude);
+            HOperatorSet.GenEmptyObj(out ho_Region);
+            HOperatorSet.GenEmptyObj(out ho_RegionClosing1);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions);
+            HOperatorSet.GenEmptyObj(out ho_RegionUnion);
+            HOperatorSet.GenEmptyObj(out ho_RegionDifference);
+            HOperatorSet.GenEmptyObj(out ho_ConnectedRegions2);
+            HOperatorSet.GenEmptyObj(out ho_RegionClosing2);
+            HOperatorSet.GenEmptyObj(out ho_SelectedRegions1);
+            hv_NGCode = new HTuple();
+            try
+            {
+
+
+                try
+                {
+
+                    hv_iSobelThr.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iSobelThr = hv_parameter.TupleSelect(
+                            21);
+                    }
+                    hv_iSobelClosing1.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iSobelClosing1 = hv_parameter.TupleSelect(
+                            22);
+                    }
+                    hv_iSobelClosing2.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iSobelClosing2 = hv_parameter.TupleSelect(
+                            23);
+                    }
+                    hv_iSobelArea.Dispose();
+                    using (HDevDisposeHelper dh = new HDevDisposeHelper())
+                    {
+                        hv_iSobelArea = hv_parameter.TupleSelect(
+                            24);
+                    }
+
+
+                    ho_GrayImage1.Dispose();
+                    HOperatorSet.Rgb1ToGray(ho_Image, out ho_GrayImage1);
+
+                    ho_RegionErosion.Dispose();
+                    HOperatorSet.ErosionRectangle1(ho_Region_Duanmian, out ho_RegionErosion,
+                        8, 8);
+                    ho_ImageReduced.Dispose();
+                    HOperatorSet.ReduceDomain(ho_GrayImage1, ho_RegionErosion, out ho_ImageReduced
+                        );
+
+
+
+                    ho_EdgeAmplitude.Dispose();
+                    HOperatorSet.SobelAmp(ho_ImageReduced, out ho_EdgeAmplitude, "sum_abs", 3);
+                    ho_Region.Dispose();
+                    HOperatorSet.Threshold(ho_EdgeAmplitude, out ho_Region, hv_iSobelThr, 255);
+
+
+                    ho_RegionClosing1.Dispose();
+                    HOperatorSet.ClosingCircle(ho_Region, out ho_RegionClosing1, hv_iSobelClosing1);
+                    ho_ConnectedRegions.Dispose();
+                    HOperatorSet.Connection(ho_RegionClosing1, out ho_ConnectedRegions);
+                    ho_RegionUnion.Dispose();
+                    HOperatorSet.Union1(ho_ConnectedRegions, out ho_RegionUnion);
+                    ho_RegionDifference.Dispose();
+                    HOperatorSet.Difference(ho_RegionErosion, ho_RegionUnion, out ho_RegionDifference
+                        );
+                    ho_ConnectedRegions2.Dispose();
+                    HOperatorSet.Connection(ho_RegionDifference, out ho_ConnectedRegions2);
+                    ho_RegionClosing2.Dispose();
+                    HOperatorSet.ClosingCircle(ho_ConnectedRegions2, out ho_RegionClosing2, hv_iSobelClosing2);
+                    ho_SelectedRegions1.Dispose();
+                    HOperatorSet.SelectShape(ho_RegionClosing2, out ho_SelectedRegions1, "area",
+                        "and", hv_iSobelArea, 99999);
+                    ho_Region_Err2.Dispose();
+                    ho_Region_Err2 = new HObject(ho_SelectedRegions1);
+                    hv_Number.Dispose();
+                    HOperatorSet.CountObj(ho_SelectedRegions1, out hv_Number);
+                    if ((int)(new HTuple(hv_Number.TupleGreater(0))) != 0)
+                    {
+
+
+                        hv_NGCode.Dispose();
+                        hv_NGCode = 4;
+                        ho_GrayImage1.Dispose();
+                        ho_RegionErosion.Dispose();
+                        ho_ImageReduced.Dispose();
+                        ho_EdgeAmplitude.Dispose();
+                        ho_Region.Dispose();
+                        ho_RegionClosing1.Dispose();
+                        ho_ConnectedRegions.Dispose();
+                        ho_RegionUnion.Dispose();
+                        ho_RegionDifference.Dispose();
+                        ho_ConnectedRegions2.Dispose();
+                        ho_RegionClosing2.Dispose();
+                        ho_SelectedRegions1.Dispose();
+
+                        hv_iSobelThr.Dispose();
+                        hv_iSobelClosing1.Dispose();
+                        hv_iSobelClosing2.Dispose();
+                        hv_iSobelArea.Dispose();
+                        hv_Number.Dispose();
+                        hv_exc.Dispose();
+
+                        return;
+                    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                }
+                // catch (exc) 
+                catch (hvppleException HDevExpDefaultException1)
+                {
+                    HDevExpDefaultException1.ToHTuple(out hv_exc);
+                    hv_NGCode.Dispose();
+                    hv_NGCode = 34;
+                }
+
+                ho_GrayImage1.Dispose();
+                ho_RegionErosion.Dispose();
+                ho_ImageReduced.Dispose();
+                ho_EdgeAmplitude.Dispose();
+                ho_Region.Dispose();
+                ho_RegionClosing1.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_RegionDifference.Dispose();
+                ho_ConnectedRegions2.Dispose();
+                ho_RegionClosing2.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_iSobelThr.Dispose();
+                hv_iSobelClosing1.Dispose();
+                hv_iSobelClosing2.Dispose();
+                hv_iSobelArea.Dispose();
+                hv_Number.Dispose();
+                hv_exc.Dispose();
+
+                return;
+            }
+            catch (hvppleException HDevExpDefaultException)
+            {
+                ho_GrayImage1.Dispose();
+                ho_RegionErosion.Dispose();
+                ho_ImageReduced.Dispose();
+                ho_EdgeAmplitude.Dispose();
+                ho_Region.Dispose();
+                ho_RegionClosing1.Dispose();
+                ho_ConnectedRegions.Dispose();
+                ho_RegionUnion.Dispose();
+                ho_RegionDifference.Dispose();
+                ho_ConnectedRegions2.Dispose();
+                ho_RegionClosing2.Dispose();
+                ho_SelectedRegions1.Dispose();
+
+                hv_iSobelThr.Dispose();
+                hv_iSobelClosing1.Dispose();
+                hv_iSobelClosing2.Dispose();
+                hv_iSobelArea.Dispose();
+                hv_Number.Dispose();
                 hv_exc.Dispose();
 
                 throw HDevExpDefaultException;
@@ -10192,7 +11796,7 @@ namespace SiyarSixsDetect
         public static void MK(HObject ho_Image, HObject ho_ModelRegion, HObject ho_Region_dianji_zhengmian,
       out HObject ho_Region_zima, out HObject ho_RegionErr1, out HObject ho_RegionErr2,
       out HObject ho_RegionMK, HTuple hv_ModelID, HTuple hv_ModelParam, HTuple hv_Parameter_MK,
-      out HTuple hv_NGCode1)
+      out HTuple hv_NGCode)
         {
 
 
@@ -10232,7 +11836,7 @@ namespace SiyarSixsDetect
             HTuple hv_Area1 = new HTuple(), hv_Row1 = new HTuple();
             HTuple hv_Column1 = new HTuple(), hv_Area2 = new HTuple();
             HTuple hv_Row2 = new HTuple(), hv_Column2 = new HTuple();
-            HTuple hv_exc = new HTuple(), hv_NGCode = new HTuple();
+            HTuple hv_exc = new HTuple();
             // Initialize local and output iconic variables 
             HOperatorSet.GenEmptyObj(out ho_Region_zima);
             HOperatorSet.GenEmptyObj(out ho_RegionErr1);
@@ -10267,7 +11871,7 @@ namespace SiyarSixsDetect
             HOperatorSet.GenEmptyObj(out ho_ConnectedRegions2);
             HOperatorSet.GenEmptyObj(out ho_SelectedRegions1);
             HOperatorSet.GenEmptyObj(out ho_SelectedRegions2);
-            hv_NGCode1 = new HTuple();
+            hv_NGCode = new HTuple();
             try
             {
 
@@ -10383,7 +11987,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.Connection(ho_RegionOpening, out ho_ConnectedRegions);
                     ho_SelectedRegions.Dispose();
                     HOperatorSet.SelectShape(ho_ConnectedRegions, out ho_SelectedRegions, "area",
-                        "and", 800, 99999);
+                        "and", 1000, 99999);
                     ho_RegionUnion.Dispose();
                     HOperatorSet.Union1(ho_SelectedRegions, out ho_RegionUnion);
                     hv_Rowaaa.Dispose(); hv_Columnaaa.Dispose(); hv_Phiaaa.Dispose(); hv_Length1aaa.Dispose(); hv_Length2aaa.Dispose();
@@ -10395,6 +11999,7 @@ namespace SiyarSixsDetect
                     ho_EroStruct.Dispose();
                     HOperatorSet.GenRectangle2(out ho_EroStruct, hv_Rowaaa, hv_Columnaaa, hv_Phiaaa,
                         8, 8);
+                    //**这个膨胀操作的意义在何处，（现在会造成字码的误检）
                     ho_RegionMK.Dispose();
                     HOperatorSet.Dilation1(ho_Rectangle, ho_EroStruct, out ho_RegionMK, 1);
                     ho_ImageMK.Dispose();
@@ -10418,7 +12023,7 @@ namespace SiyarSixsDetect
                     HOperatorSet.Connection(ho_RegionClosing, out ho_ConnectedRegions3);
                     ho_SelectedRegions3.Dispose();
                     HOperatorSet.SelectShape(ho_ConnectedRegions3, out ho_SelectedRegions3, "area",
-                        "and", 100, 99999);
+                        "and", 200, 99999);
                     hv_Number_zima.Dispose();
                     HOperatorSet.CountObj(ho_SelectedRegions3, out hv_Number_zima);
 
@@ -10446,8 +12051,8 @@ namespace SiyarSixsDetect
                     {
                         if ((int)(new HTuple(hv_Number_zima.TupleNotEqual(hv_iNum_MK))) != 0)
                         {
-                            hv_NGCode1.Dispose();
-                            hv_NGCode1 = 29;
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 29;
                             ho_Rectangle1.Dispose();
                             ho_RegionUnion1.Dispose();
                             ho_RegionTrans.Dispose();
@@ -10513,7 +12118,6 @@ namespace SiyarSixsDetect
                             hv_Row2.Dispose();
                             hv_Column2.Dispose();
                             hv_exc.Dispose();
-                            hv_NGCode.Dispose();
 
                             return;
                         }
@@ -10574,8 +12178,8 @@ namespace SiyarSixsDetect
                             out hv_Column2);
                         if ((int)(new HTuple(hv_Area1.TupleGreater(hv_iArea_MK1))) != 0)
                         {
-                            hv_NGCode1.Dispose();
-                            hv_NGCode1 = 1;
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 1;
                             ho_Rectangle1.Dispose();
                             ho_RegionUnion1.Dispose();
                             ho_RegionTrans.Dispose();
@@ -10641,15 +12245,14 @@ namespace SiyarSixsDetect
                             hv_Row2.Dispose();
                             hv_Column2.Dispose();
                             hv_exc.Dispose();
-                            hv_NGCode.Dispose();
 
                             return;
                         }
 
                         if ((int)(new HTuple(hv_Area2.TupleGreater(hv_iArea_MK2))) != 0)
                         {
-                            hv_NGCode1.Dispose();
-                            hv_NGCode1 = 2;
+                            hv_NGCode.Dispose();
+                            hv_NGCode = 2;
                             ho_Rectangle1.Dispose();
                             ho_RegionUnion1.Dispose();
                             ho_RegionTrans.Dispose();
@@ -10715,7 +12318,6 @@ namespace SiyarSixsDetect
                             hv_Row2.Dispose();
                             hv_Column2.Dispose();
                             hv_exc.Dispose();
-                            hv_NGCode.Dispose();
 
                             return;
                         }
@@ -10723,8 +12325,8 @@ namespace SiyarSixsDetect
                     }
                     else
                     {
-                        hv_NGCode1.Dispose();
-                        hv_NGCode1 = 28;
+                        hv_NGCode.Dispose();
+                        hv_NGCode = 28;
                         ho_Rectangle1.Dispose();
                         ho_RegionUnion1.Dispose();
                         ho_RegionTrans.Dispose();
@@ -10790,7 +12392,6 @@ namespace SiyarSixsDetect
                         hv_Row2.Dispose();
                         hv_Column2.Dispose();
                         hv_exc.Dispose();
-                        hv_NGCode.Dispose();
 
                         return;
                     }
@@ -10872,7 +12473,6 @@ namespace SiyarSixsDetect
                 hv_Row2.Dispose();
                 hv_Column2.Dispose();
                 hv_exc.Dispose();
-                hv_NGCode.Dispose();
 
                 return;
             }
@@ -10943,7 +12543,6 @@ namespace SiyarSixsDetect
                 hv_Row2.Dispose();
                 hv_Column2.Dispose();
                 hv_exc.Dispose();
-                hv_NGCode.Dispose();
 
                 throw HDevExpDefaultException;
             }
